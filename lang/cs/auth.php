@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'failed' => 'Nespravny e-mail nebo heslo.',
-    'password' => 'Zadane heslo neni spravne.',
-    'throttle' => 'Prilis mnoho pokusu o prihlaseni. Zkuste to znovu za :seconds sekund.',
+    'failed' => 'Nesprávný e-mail nebo heslo.',
+    'password' => 'Zadané heslo není správné.',
+    'throttle' => 'Příliš mnoho pokusů o přihlášení. Zkuste to znovu za :seconds sekund.',
 ];
