@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'browse_products' => 'Browse products',
+    'search' => 'Search',
+    'cancel_filter' => 'Clear filter',
+    'add_to_cart' => 'Add to cart',
+    'add_to_cart_full' => 'Add to cart',
+    'continue_to_checkout' => 'Continue to checkout',
+    'continue_shopping' => 'Continue shopping',
+    'submit_order' => 'Submit order',
+    'go_to_products' => 'Go to products',
+    'save' => 'Save',
+    'back' => 'Back',
+    'edit' => 'Edit',
+    'delete' => 'Delete',
+    'detail' => 'Detail',
+    'go_home' => 'Back to homepage',
+    'my_orders' => 'My orders',
+    'login' => 'Log in',
+    'register' => 'Register',
+    'open_frontend' => 'Open frontend',
+    'manage_themes' => 'Manage themes',
+    'save_active_theme' => 'Save active theme',
+    'update' => 'Update',
+    'remove' => 'Remove',
+];

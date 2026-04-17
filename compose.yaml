@@ -1,0 +1,32 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: oneshop-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: oneshop
+      MYSQL_USER: oneshop
+      MYSQL_PASSWORD: oneshop
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  typesense:
+    image: typesense/typesense:27.1
+    container_name: oneshop-typesense
+    command: '--data-dir /data --api-key=xyz --enable-cors'
+    ports:
+      - "8108:8108"
+    volumes:
+      - typesense_data:/data
+
+volumes:
+  mysql_data:
+  typesense_data:

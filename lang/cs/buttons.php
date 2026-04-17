@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'browse_products' => 'Prochazet produkty',
+    'search' => 'Hledat',
+    'cancel_filter' => 'Zrusit filtr',
+    'add_to_cart' => 'Do kosiku',
+    'add_to_cart_full' => 'Pridat do kosiku',
+    'continue_to_checkout' => 'Pokracovat k objednavce',
+    'continue_shopping' => 'Pokracovat v nakupu',
+    'submit_order' => 'Odeslat objednavku',
+    'go_to_products' => 'Prejit na produkty',
+    'save' => 'Ulozit',
+    'back' => 'Zpet',
+    'edit' => 'Upravit',
+    'delete' => 'Smazat',
+    'detail' => 'Detail',
+    'go_home' => 'Zpet na homepage',
+    'my_orders' => 'Moje objednavky',
+    'login' => 'Prihlasit se',
+    'register' => 'Registrace',
+    'open_frontend' => 'Otevrit frontend',
+    'manage_themes' => 'Spravovat theme',
+    'save_active_theme' => 'Ulozit aktivni theme',
+    'update' => 'Aktualizovat',
+    'remove' => 'Odebrat',
+];
