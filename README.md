@@ -284,3 +284,51 @@ V administraci je nova sekce `Transakce`:
 
 - seznam: `admin/payment-transactions`
 - detail: `admin/payment-transactions/{id}`
+
+## Překlady (i18n)
+
+Projekt je plně lokalizován. Všechny uživatelské texty procházejí přes `__()` nebo `trans()` — žádné hardcodované řetězce ve views ani controllerech.
+
+### Podporované jazyky
+
+| Kód | Jazyk | Složka |
+|-----|-------|--------|
+| `cs` | Čeština (výchozí) | `lang/cs/` |
+| `en` | Angličtina | `lang/en/` |
+
+Výchozí jazyk se nastavuje v `.env`:
+
+```dotenv
+APP_LOCALE=cs
+APP_FALLBACK_LOCALE=en
+```
+
+### Překladové soubory
+
+| Soubor | Obsah |
+|--------|-------|
+| `lang/{locale}/shop.php` | Obecné texty e-shopu a admin rozhraní (katalog, objednávky, doprava, platby, zákazníci) |
+| `lang/{locale}/forms.php` | Popisky formulářových polí |
+| `lang/{locale}/buttons.php` | Texty tlačítek |
+| `lang/{locale}/messages.php` | Flash zprávy (potvrzení akcí, chybové hlášky, stav košíku, checkoutu) |
+| `lang/{locale}/validation.php` | Přeložená validační pravidla a mapování názvů polí (`attributes`) |
+| `lang/{locale}/auth.php` | Autentizační hlášky (nesprávné heslo, throttle) |
+
+### Flash zprávy (messages.php)
+
+Pokrytí: košík, checkout, registrace, přihlášení, admin CRUD pro všechny entity (kategorie, zákazníci, ceníky, produkty, dopravy, platby, objednávky), chyby při výběru dopravy/platby.
+
+### Validační překlady (validation.php)
+
+Soubor obsahuje překlady validačních pravidel a klíč `attributes` s mapováním technických názvů polí na čitelné české/anglické popisky. Pokrytí:
+
+- Pole objednávky a checkoutu: `product_id`, `quantity`, `shipping_method_id`, `payment_method_id`, `pickup_point_id`
+- Fakturační a doručovací adresa: `billing_*`, `shipping_*`
+- Produktová pole: `sku`, `base_price_net`, `stock_qty`, `category_ids`
+- Admin pole: `code`, `currency`, `valid_from`, `valid_to`, `price_net`, `price_gross`, `payment_method_ids`, `status`, `note` a další
+
+### Přidání nového jazyka
+
+1. Zkopírovat složku `lang/cs/` jako `lang/{novy_kod}/`.
+2. Přeložit hodnoty ve všech souborech.
+3. Nastavit `APP_LOCALE={novy_kod}` v `.env` nebo přidat přepínač jazyka do UI.
