@@ -68,23 +68,31 @@
                         <div class="col-12" id="pickup-point-block" style="display:none;">
                             <div class="border rounded p-3 bg-light">
                                 <h6 class="mb-3">{{ __('checkout.pickup_point') }}</h6>
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <label class="form-label">{{ __('checkout.pickup_point_id') }} *</label>
-                                        <input name="pickup_point_id" id="pickup_point_id" class="form-control @error('pickup_point_id') is-invalid @enderror" value="{{ old('pickup_point_id') }}">
-                                        @error('pickup_point_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">{{ __('checkout.pickup_point_name') }} *</label>
-                                        <input name="pickup_point_name" id="pickup_point_name" class="form-control @error('pickup_point_name') is-invalid @enderror" value="{{ old('pickup_point_name') }}">
-                                        @error('pickup_point_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">{{ __('checkout.pickup_point_address') }} *</label>
-                                        <input name="pickup_point_address" id="pickup_point_address" class="form-control @error('pickup_point_address') is-invalid @enderror" value="{{ old('pickup_point_address') }}">
-                                        @error('pickup_point_address') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                    </div>
+
+                                <input type="hidden" name="pickup_point_id" id="pickup_point_id" value="{{ old('pickup_point_id') }}">
+                                <input type="hidden" name="pickup_point_name" id="pickup_point_name" value="{{ old('pickup_point_name') }}">
+                                <input type="hidden" name="pickup_point_address" id="pickup_point_address" value="{{ old('pickup_point_address') }}">
+
+                                <button type="button" class="btn btn-outline-primary" id="pickup-point-select-btn">
+                                    Vybrat výdejní místo
+                                </button>
+
+                                <div id="pickup-point-selected" class="mt-3" style="display:none;">
+                                    <div class="small text-muted mb-1">{{ __('checkout.pickup_point') }}</div>
+                                    <div class="fw-semibold" id="pickup-point-selected-name"></div>
+                                    <div class="text-muted" id="pickup-point-selected-address"></div>
                                 </div>
+
+                                @error('pickup_point_id')
+                                    <div class="text-danger small mt-2">{{ $message }}</div>
+                                @enderror
+                                @error('pickup_point_name')
+                                    <div class="text-danger small mt-2">{{ $message }}</div>
+                                @enderror
+                                @error('pickup_point_address')
+                                    <div class="text-danger small mt-2">{{ $message }}</div>
+                                @enderror
+
                                 <div class="form-text">{{ __('checkout.pickup_required') }}</div>
                             </div>
                         </div>
@@ -238,6 +246,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://widget.packeta.com/v6/www/js/library.js"></script>
 <script>
     const shippingAddressToggle = document.getElementById('useBillingAsShipping');
     const shippingAddressBlock  = document.getElementById('shippingBlock');
@@ -248,6 +257,11 @@
     const pickupId = document.getElementById('pickup_point_id');
     const pickupName = document.getElementById('pickup_point_name');
     const pickupAddress = document.getElementById('pickup_point_address');
+    const pickupSelectButton = document.getElementById('pickup-point-select-btn');
+    const pickupSelectedBox = document.getElementById('pickup-point-selected');
+    const pickupSelectedName = document.getElementById('pickup-point-selected-name');
+    const pickupSelectedAddress = document.getElementById('pickup-point-selected-address');
+    const packetaApiKey = @json(config('services.packeta.api_key') ?? config('services.zasilkovna.api_key') ?? env('PACKETA_API_KEY') ?? env('ZASILKOVNA_API_KEY') ?? '');
 
     const baseNet = {{ json_encode((float) $totals['net']) }};
     const baseGross = {{ json_encode((float) $totals['gross']) }};
@@ -269,6 +283,14 @@
         return shippingSelect.options[shippingSelect.selectedIndex].dataset.provider || '';
     }
 
+    function renderPickupPointInfo() {
+        const hasPickupPoint = pickupName.value.trim() !== '' && pickupAddress.value.trim() !== '';
+
+        pickupSelectedBox.style.display = hasPickupPoint ? 'block' : 'none';
+        pickupSelectedName.textContent = pickupName.value;
+        pickupSelectedAddress.textContent = pickupAddress.value;
+    }
+
     function syncPickupBlock() {
         const provider = selectedShippingProvider();
         const requiresPickup = provider === 'zasilkovna_box';
@@ -278,6 +300,40 @@
         pickupId.required = requiresPickup;
         pickupName.required = requiresPickup;
         pickupAddress.required = requiresPickup;
+
+        if (requiresPickup) {
+            renderPickupPointInfo();
+        }
+    }
+
+    function onPickupPointSelected(point) {
+        if (!point) {
+            return;
+        }
+
+        const street = (point.street || '').trim();
+        const city = (point.city || '').trim();
+        const address = [street, city].filter(Boolean).join(', ');
+
+        pickupId.value = point.id || '';
+        pickupName.value = point.name || '';
+        pickupAddress.value = address;
+
+        renderPickupPointInfo();
+    }
+
+    function openPickupPointPicker() {
+        if (!packetaApiKey) {
+            alert('Chybí Packeta API key. Nastavte PACKETA_API_KEY nebo ZASILKOVNA_API_KEY.');
+            return;
+        }
+
+        if (!window.Packeta || !window.Packeta.Widget || typeof window.Packeta.Widget.pick !== 'function') {
+            alert('Packeta widget není dostupný. Zkuste to prosím znovu za chvíli.');
+            return;
+        }
+
+        window.Packeta.Widget.pick(packetaApiKey, onPickupPointSelected);
     }
 
     function selectedOptionFloat(selectEl, dataAttr) {
@@ -336,9 +392,11 @@
         updateTotals();
     });
     paymentSelect?.addEventListener('change', updateTotals);
+    pickupSelectButton?.addEventListener('click', openPickupPointPicker);
 
     syncShippingAddress();
     syncPickupBlock();
+    renderPickupPointInfo();
     updateTotals();
 </script>
 @endpush
