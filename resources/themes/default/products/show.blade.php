@@ -18,6 +18,56 @@
 
     <div class="row g-4">
         <div class="col-md-8">
+            @php
+                $galleryImages = $product->productImages;
+                $mainImage = $galleryImages->firstWhere('is_primary', true) ?? $galleryImages->first();
+            @endphp
+
+            @if ($mainImage)
+                <div class="mb-4">
+                    <div class="border rounded bg-white p-2 mb-2 text-center">
+                        <img
+                            id="product-main-image"
+                            src="{{ route('product-images.show', ['mediaFile' => $mainImage->mediaFile, 'variant' => 'main']) }}"
+                            alt="{{ $mainImage->alt ?: $product->name }}"
+                            class="img-fluid"
+                            style="max-height: 460px; width: auto;"
+                        >
+                    </div>
+                    @if ($galleryImages->count() > 1)
+                        <div class="d-flex gap-2 flex-wrap">
+                            @foreach ($galleryImages as $image)
+                                <button
+                                    type="button"
+                                    class="btn btn-light border p-1 product-thumb"
+                                    data-image-url="{{ route('product-images.show', ['mediaFile' => $image->mediaFile, 'variant' => 'main']) }}"
+                                    data-image-alt="{{ $image->alt ?: $product->name }}"
+                                >
+                                    <img
+                                        src="{{ route('product-images.show', ['mediaFile' => $image->mediaFile, 'variant' => 'thumb']) }}"
+                                        alt="{{ $image->alt ?: $product->name }}"
+                                        style="width: 72px; height: 72px; object-fit: cover;"
+                                        class="rounded"
+                                    >
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @else
+                <div class="mb-4">
+                    <div class="border rounded bg-white p-2 mb-2 text-center">
+                        <img
+                            id="product-main-image"
+                            src="{{ route('product-images.placeholder', ['variant' => 'main']) }}"
+                            alt="{{ __('shop.image_placeholder_alt', ['name' => $product->name]) }}"
+                            class="img-fluid"
+                            style="max-height: 460px; width: auto;"
+                        >
+                    </div>
+                </div>
+            @endif
+
             <h1 class="h2">{{ $product->name }}</h1>
             <p class="text-muted small mb-1">{{ __('shop.sku') }}: <strong>{{ $product->sku }}</strong></p>
 
@@ -79,5 +129,37 @@
                 </div>
             @endforeach
         </div>
+    @endif
+
+    @if ($mainImage)
+        @push('scripts')
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const mainImage = document.getElementById('product-main-image');
+                    if (!mainImage) {
+                        return;
+                    }
+
+                    document.querySelectorAll('.product-thumb').forEach(function (thumb) {
+                        const switchImage = function () {
+                            const url = thumb.dataset.imageUrl;
+                            const alt = thumb.dataset.imageAlt;
+
+                            if (!url) {
+                                return;
+                            }
+
+                            mainImage.src = url;
+                            if (alt) {
+                                mainImage.alt = alt;
+                            }
+                        };
+
+                        thumb.addEventListener('click', switchImage);
+                        thumb.addEventListener('mouseenter', switchImage);
+                    });
+                });
+            </script>
+        @endpush
     @endif
 @endsection

@@ -44,6 +44,12 @@ return [
             'throw' => false,
         ],
 
+        'private_products' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/products'),
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -3,6 +3,18 @@
 @endphp
 
 <div class="mono-card h-100 p-3 d-flex flex-column">
+    @php
+        $primaryImage = $product->productImages->firstWhere('is_primary', true) ?? $product->productImages->first();
+        $imageUrl = $primaryImage
+            ? route('product-images.show', ['mediaFile' => $primaryImage->mediaFile, 'variant' => 'thumb'])
+            : route('product-images.placeholder', ['variant' => 'thumb']);
+        $imageAlt = $primaryImage?->alt ?: $product->name;
+    @endphp
+
+    <div class="mb-3 border rounded overflow-hidden bg-dark-subtle">
+        <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}" class="w-100" style="height: 180px; object-fit: cover;">
+    </div>
+
     <div class="small mono-muted mb-2">{{ $product->sku }}</div>
     <h3 class="h5 mb-3">{{ $product->name }}</h3>
     <div class="mt-auto">

@@ -7,11 +7,13 @@ use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\PaymentGatewayController;
+use App\Http\Controllers\Frontend\ProductImageViewController;
 use App\Http\Controllers\Frontend\ProductCatalogController;
 use App\Http\Controllers\AdminWeb\CategoryController as AdminCategoryController;
 use App\Http\Controllers\AdminWeb\CustomerController as AdminCustomerController;
 use App\Http\Controllers\AdminWeb\DashboardController as AdminDashboardController;
 use App\Http\Controllers\AdminWeb\OrderController as AdminOrderController;
+use App\Http\Controllers\AdminWeb\ProductImageController as AdminProductImageController;
 use App\Http\Controllers\AdminWeb\PaymentTransactionController as AdminPaymentTransactionController;
 use App\Http\Controllers\AdminWeb\PaymentMethodController as AdminPaymentMethodController;
 use App\Http\Controllers\AdminWeb\PriceListController as AdminPriceListController;
@@ -29,6 +31,8 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/products', [ProductCatalogController::class, 'index'])->name('products.index');
 Route::get('/category/{category:slug}', [ProductCatalogController::class, 'category'])->name('products.category');
 Route::get('/product/{product:slug}', [ProductCatalogController::class, 'show'])->name('products.show');
+Route::get('/images/products/placeholder', [ProductImageViewController::class, 'placeholder'])->name('product-images.placeholder');
+Route::get('/images/products/{mediaFile}', [ProductImageViewController::class, 'show'])->name('product-images.show');
 
 // ---------------------------------------------------------------------------
 // Cart (available to both guest and authenticated users)
@@ -82,6 +86,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('products', AdminProductController::class)->except(['show']);
+    Route::post('products/{product}/images', [AdminProductImageController::class, 'store'])->name('products.images.store');
+    Route::patch('products/{product}/images/{productImage}', [AdminProductImageController::class, 'update'])->name('products.images.update');
+    Route::post('products/{product}/images/{productImage}/main', [AdminProductImageController::class, 'makePrimary'])->name('products.images.main');
+    Route::delete('products/{product}/images/{productImage}', [AdminProductImageController::class, 'destroy'])->name('products.images.destroy');
+
     Route::resource('categories', AdminCategoryController::class)->except(['show']);
     Route::resource('price-lists', AdminPriceListController::class)->except(['show']);
     Route::resource('shipping-methods', AdminShippingMethodController::class)->except(['show']);

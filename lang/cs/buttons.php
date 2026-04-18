@@ -24,4 +24,6 @@ return [
     'save_active_theme' => 'Uložit aktivní šablonu',
     'update' => 'Aktualizovat',
     'remove' => 'Odebrat',
+    'upload_images' => 'Nahrát obrázky',
+    'set_as_main' => 'Nastavit jako hlavní',
 ];

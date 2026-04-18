@@ -34,7 +34,7 @@ class MysqlProductSearch implements ProductSearchInterface
                   ->orWhere('name', 'like', $safe . '%')         // prefix name
                   ->orWhere('name', 'like', '%' . $safe . '%');  // substring name
             })
-            ->with('categories')
+                        ->with(['categories', 'productImages.mediaFile'])
             // Exact SKU hits bubble to top; prefix name before substring.
             ->orderByRaw(
                 'CASE

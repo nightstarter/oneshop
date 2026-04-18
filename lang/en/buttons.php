@@ -24,4 +24,6 @@ return [
     'save_active_theme' => 'Save active theme',
     'update' => 'Update',
     'remove' => 'Remove',
+    'upload_images' => 'Upload images',
+    'set_as_main' => 'Set as main',
 ];

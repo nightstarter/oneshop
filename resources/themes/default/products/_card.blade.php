@@ -1,5 +1,17 @@
 <div class="card h-100 product-card shadow-sm">
     <a href="{{ route('products.show', $product->slug) }}" class="text-decoration-none text-dark">
+        @php
+            $primaryImage = $product->productImages->firstWhere('is_primary', true) ?? $product->productImages->first();
+            $imageUrl = $primaryImage
+                ? route('product-images.show', ['mediaFile' => $primaryImage->mediaFile, 'variant' => 'thumb'])
+                : route('product-images.placeholder', ['variant' => 'thumb']);
+            $imageAlt = $primaryImage?->alt ?: $product->name;
+        @endphp
+
+        <div class="ratio ratio-4x3 bg-light border-bottom">
+            <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}" class="w-100 h-100" style="object-fit: cover;">
+        </div>
+
         <div class="card-body d-flex flex-column">
             <h6 class="card-title mb-1">{{ $product->name }}</h6>
             <small class="text-muted mb-2">{{ __('shop.sku') }}: {{ $product->sku }}</small>

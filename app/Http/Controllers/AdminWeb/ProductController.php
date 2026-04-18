@@ -36,11 +36,13 @@ class ProductController extends Controller
         $product = Product::create($data);
         $product->categories()->sync($categoryIds);
 
-        return redirect()->route('admin.products.index')->with('success', __('messages.product_created'));
+        return redirect()->route('admin.products.edit', $product)->with('success', __('messages.product_created'));
     }
 
     public function edit(Product $product)
     {
+        $product->load(['categories', 'productImages.mediaFile']);
+
         return view('admin.products.form', [
             'product' => $product,
             'categories' => Category::query()->where('is_active', true)->orderBy('name')->get(),

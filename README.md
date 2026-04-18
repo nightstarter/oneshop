@@ -332,3 +332,120 @@ Soubor obsahuje překlady validačních pravidel a klíč `attributes` s mapová
 1. Zkopírovat složku `lang/cs/` jako `lang/{novy_kod}/`.
 2. Přeložit hodnoty ve všech souborech.
 3. Nastavit `APP_LOCALE={novy_kod}` v `.env` nebo přidat přepínač jazyka do UI.
+
+## Systém obrázků produktů
+
+Projekt používá neveřejné ukládání obrázků a render přes Laravel route/controller.
+Soubor obrázku není přístupný přímo z `public` URL.
+
+### Datový model
+
+- `media_files`: metadata fyzického souboru (`disk`, `path`, `mime_type`, `checksum`, rozměry)
+- `product_images`: vazba produktu na obrázek + metadata galerie (`sort_order`, `alt`, `is_primary`)
+
+Tabulka `product_images` je rozšířena pro pohodlnou správu v administraci:
+
+- `id`
+- `timestamps`
+- unikátní kombinace `product_id + media_file_id`
+
+### Uložení souborů
+
+- Disk: `private_products`
+- Cesta: `storage/app/private/products`
+- Konfigurace: `config/filesystems.php`
+- Při uploadu se zachovává původní název souboru (filename) v rámci storage i v DB (`media_files.original_name`)
+- Pokud stejný název již existuje, přidá se suffix `-1`, `-2`, ... bez přepsání existujícího souboru
+
+Originální soubory zůstávají vždy bez watermarku.
+
+### Frontend render obrázků
+
+Veřejné URL obrázků běží přes route:
+
+- `GET /images/products/{mediaFile}`
+
+Controller:
+
+- `App\Http\Controllers\Frontend\ProductImageViewController`
+
+Servisní vrstva:
+
+- `App\Services\ProductImageRenderService`
+
+Render pipeline:
+
+1. Načtení originálu ze soukromého disku.
+2. Volitelné přepočítání varianty (`main`, `thumb`).
+3. Aplikace watermarku až při výstupu.
+4. Vrácení bezpečné image response (`Content-Type`, `ETag`, `Last-Modified`, `X-Content-Type-Options`).
+
+Přístupová pravidla:
+
+- obrázky aktivních produktů jsou veřejné
+- obrázky neaktivních produktů pouze pro admin uživatele
+
+### Placeholder obrázek (produkt bez fotky)
+
+Pro produkty bez přiřazeného obrázku se používá route placeholderu:
+
+- `GET /images/products/placeholder`
+
+Placeholder je generován jako SVG v controlleru a používá se v:
+
+- produktových kartách (`default`, `studio`, `mono` theme)
+- detailu produktu (`default`, `studio` theme)
+
+Text placeholderu je lokalizovaný přes:
+
+- `shop.image_placeholder_text`
+- `shop.image_placeholder_alt`
+
+### Administrace obrázků
+
+Správa obrázků produktu je dostupná na formuláři editace produktu.
+
+Podporované akce:
+
+- upload jednoho nebo více obrázků
+- seznam obrázků produktu
+- označení hlavního obrázku
+- změna pořadí (`sort_order`)
+- editace `alt` textu
+- smazání obrázku
+
+Admin routes:
+
+- `POST admin/products/{product}/images`
+- `PATCH admin/products/{product}/images/{productImage}`
+- `POST admin/products/{product}/images/{productImage}/main`
+- `DELETE admin/products/{product}/images/{productImage}`
+
+Controller:
+
+- `App\Http\Controllers\AdminWeb\ProductImageController`
+
+Business logika:
+
+- `App\Services\ProductImageService`
+
+### Watermark nastavení
+
+Konfigurace watermark textu je v:
+
+- `config/shop.php` (`image_watermark_text`)
+- `.env` přes `SHOP_IMAGE_WATERMARK_TEXT`
+
+Příklad:
+
+```dotenv
+SHOP_IMAGE_WATERMARK_TEXT="OneShop"
+```
+
+### Migrace
+
+Po nasazení změn spusťte:
+
+```powershell
+php artisan migrate
+```

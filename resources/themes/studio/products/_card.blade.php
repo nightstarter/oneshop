@@ -3,6 +3,18 @@
 @endphp
 
 <div class="studio-card h-100 p-3 d-flex flex-column">
+    @php
+        $primaryImage = $product->productImages->firstWhere('is_primary', true) ?? $product->productImages->first();
+        $imageUrl = $primaryImage
+            ? route('product-images.show', ['mediaFile' => $primaryImage->mediaFile, 'variant' => 'thumb'])
+            : route('product-images.placeholder', ['variant' => 'thumb']);
+        $imageAlt = $primaryImage?->alt ?: $product->name;
+    @endphp
+
+    <div class="mb-3 overflow-hidden rounded-3 border bg-white">
+        <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}" class="w-100" style="height: 190px; object-fit: cover;">
+    </div>
+
     <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
         <div>
             <div class="small text-uppercase studio-muted">{{ $product->sku }}</div>

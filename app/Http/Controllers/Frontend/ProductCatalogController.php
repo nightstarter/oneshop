@@ -31,10 +31,12 @@ class ProductCatalogController extends Controller
                 $request->integer('per_page', 24),
                 $request->integer('page', 1),
             );
+
+            $products->getCollection()->loadMissing(['categories', 'productImages.mediaFile']);
         } else {
             $products = Product::query()
                 ->where('is_active', true)
-                ->with('categories')
+                ->with(['categories', 'productImages.mediaFile'])
                 ->orderBy('name')
                 ->paginate(24);
         }
@@ -52,7 +54,7 @@ class ProductCatalogController extends Controller
     {
         $products = $category->products()
             ->where('is_active', true)
-            ->with('categories')
+            ->with(['categories', 'productImages.mediaFile'])
             ->orderBy('name')
             ->paginate(24);
 
@@ -69,7 +71,7 @@ class ProductCatalogController extends Controller
     {
         abort_unless($product->is_active, 404);
 
-        $product->load('categories');
+        $product->load(['categories', 'productImages.mediaFile']);
         $customer = Auth::user()?->customer;
         $price = $this->prices->calculate($product, $customer);
 
@@ -77,6 +79,7 @@ class ProductCatalogController extends Controller
             ->where('is_active', true)
             ->where('id', '!=', $product->id)
             ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $product->categories->pluck('id')))
+            ->with(['categories', 'productImages.mediaFile'])
             ->take(4)
             ->get();
 

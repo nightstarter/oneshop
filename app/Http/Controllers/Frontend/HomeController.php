@@ -15,7 +15,7 @@ class HomeController extends Controller
     {
         $featuredProducts = Product::query()
             ->where('is_active', true)
-            ->with('categories')
+            ->with(['categories', 'productImages.mediaFile'])
             ->latest()
             ->take(8)
             ->get();

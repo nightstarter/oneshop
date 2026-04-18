@@ -61,4 +61,90 @@
         <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">{{ __('buttons.back') }}</a>
     </div>
 </form>
+
+@if ($isEdit)
+    <div class="card mt-4">
+        <div class="card-header">{{ __('shop.admin.product_images') }}</div>
+        <div class="card-body">
+            <form method="POST" action="{{ route('admin.products.images.store', $product) }}" enctype="multipart/form-data" class="row g-3 mb-4">
+                @csrf
+                <div class="col-md-8">
+                    <label class="form-label">{{ __('forms.images') }}</label>
+                    <input type="file" name="images[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple required>
+                    <div class="form-text">{{ __('forms.image_upload_help') }}</div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" type="submit">{{ __('buttons.upload_images') }}</button>
+                </div>
+            </form>
+
+            @if ($product->productImages->isEmpty())
+                <p class="text-muted mb-0">{{ __('messages.no_product_images') }}</p>
+            @else
+                <div class="row g-3">
+                    @foreach ($product->productImages as $productImage)
+                        <div class="col-12 col-lg-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex gap-3">
+                                    <img
+                                        src="{{ route('product-images.show', ['mediaFile' => $productImage->mediaFile, 'variant' => 'thumb']) }}"
+                                        alt="{{ $productImage->alt ?: $product->name }}"
+                                        style="width: 110px; height: 110px; object-fit: cover;"
+                                        class="rounded border"
+                                    >
+
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <strong>#{{ $productImage->id }}</strong>
+                                            @if ($productImage->is_primary)
+                                                <span class="badge bg-success">{{ __('shop.admin.main_image') }}</span>
+                                            @endif
+                                        </div>
+
+                                        <form method="POST" action="{{ route('admin.products.images.update', [$product, $productImage]) }}" class="row g-2">
+                                            @csrf
+                                            @method('PATCH')
+                                            <div class="col-12">
+                                                <label class="form-label small mb-1">{{ __('forms.image_alt') }}</label>
+                                                <input name="alt" class="form-control form-control-sm" value="{{ old('alt', $productImage->alt) }}" maxlength="191">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small mb-1">{{ __('forms.sort_order') }}</label>
+                                                <input type="number" min="0" name="sort_order" class="form-control form-control-sm" value="{{ old('sort_order', $productImage->sort_order) }}" required>
+                                            </div>
+                                            <div class="col-12 d-flex gap-2">
+                                                <button class="btn btn-sm btn-outline-primary" type="submit">{{ __('buttons.save') }}</button>
+                                            </div>
+                                        </form>
+
+                                        <div class="d-flex gap-2 mt-2">
+                                            <form method="POST" action="{{ route('admin.products.images.main', [$product, $productImage]) }}">
+                                                @csrf
+                                                <button class="btn btn-sm btn-outline-success" type="submit" @disabled($productImage->is_primary)>
+                                                    {{ __('buttons.set_as_main') }}
+                                                </button>
+                                            </form>
+
+                                            <form method="POST" action="{{ route('admin.products.images.destroy', [$product, $productImage]) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm(@js(__('messages.delete_product_image_confirm')));"
+                                                >
+                                                    {{ __('buttons.delete') }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+@endif
 @endsection

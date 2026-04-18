@@ -102,10 +102,19 @@ class Product extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function productImages(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)
+            ->orderByDesc('is_primary')
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
     public function images(): BelongsToMany
     {
         return $this->belongsToMany(MediaFile::class, 'product_images')
             ->withPivot(['sort_order', 'alt', 'is_primary'])
+            ->withTimestamps()
             ->orderByPivot('sort_order');
     }
 }

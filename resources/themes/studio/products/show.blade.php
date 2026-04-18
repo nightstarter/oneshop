@@ -3,8 +3,59 @@
 @section('title', $product->name . ' - ' . config('app.name'))
 
 @section('content')
+    @php
+        $galleryImages = $product->productImages;
+        $mainImage = $galleryImages->firstWhere('is_primary', true) ?? $galleryImages->first();
+    @endphp
+
     <div class="row g-4 g-lg-5 align-items-start">
         <div class="col-lg-7">
+            @if ($mainImage)
+                <div class="mb-3">
+                    <div class="bg-white rounded-4 p-2 border">
+                        <img
+                            id="product-main-image"
+                            src="{{ route('product-images.show', ['mediaFile' => $mainImage->mediaFile, 'variant' => 'main']) }}"
+                            alt="{{ $mainImage->alt ?: $product->name }}"
+                            class="img-fluid rounded-3"
+                            style="max-height: 430px; width: auto;"
+                        >
+                    </div>
+                </div>
+
+                @if ($galleryImages->count() > 1)
+                    <div class="d-flex gap-2 flex-wrap mb-4">
+                        @foreach ($galleryImages as $image)
+                            <button
+                                type="button"
+                                class="btn btn-light border p-1 product-thumb"
+                                data-image-url="{{ route('product-images.show', ['mediaFile' => $image->mediaFile, 'variant' => 'main']) }}"
+                                data-image-alt="{{ $image->alt ?: $product->name }}"
+                            >
+                                <img
+                                    src="{{ route('product-images.show', ['mediaFile' => $image->mediaFile, 'variant' => 'thumb']) }}"
+                                    alt="{{ $image->alt ?: $product->name }}"
+                                    style="width: 64px; height: 64px; object-fit: cover;"
+                                    class="rounded"
+                                >
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+            @else
+                <div class="mb-3">
+                    <div class="bg-white rounded-4 p-2 border">
+                        <img
+                            id="product-main-image"
+                            src="{{ route('product-images.placeholder', ['variant' => 'main']) }}"
+                            alt="{{ __('shop.image_placeholder_alt', ['name' => $product->name]) }}"
+                            class="img-fluid rounded-3"
+                            style="max-height: 430px; width: auto;"
+                        >
+                    </div>
+                </div>
+            @endif
+
             <div class="studio-shell rounded-5 p-4 p-lg-5">
                 <div class="small text-uppercase studio-muted mb-2">{{ $product->sku }}</div>
                 <h1 class="display-5 mb-3">{{ $product->name }}</h1>
@@ -62,5 +113,37 @@
                 @endforeach
             </div>
         </section>
+    @endif
+
+    @if ($mainImage)
+        @push('scripts')
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const mainImage = document.getElementById('product-main-image');
+                    if (!mainImage) {
+                        return;
+                    }
+
+                    document.querySelectorAll('.product-thumb').forEach(function (thumb) {
+                        const switchImage = function () {
+                            const url = thumb.dataset.imageUrl;
+                            const alt = thumb.dataset.imageAlt;
+
+                            if (!url) {
+                                return;
+                            }
+
+                            mainImage.src = url;
+                            if (alt) {
+                                mainImage.alt = alt;
+                            }
+                        };
+
+                        thumb.addEventListener('click', switchImage);
+                        thumb.addEventListener('mouseenter', switchImage);
+                    });
+                });
+            </script>
+        @endpush
     @endif
 @endsection
