@@ -13,7 +13,8 @@ class SharedStockCatalogSeeder extends Seeder
 {
     public function run(): void
     {
-        $category = Category::query()->updateOrCreate(
+        Product::withoutSyncingToSearch(function () {
+            $category = Category::query()->updateOrCreate(
             ['slug' => 'baterie-a-nabijecky-notebooky'],
             [
                 'name' => 'Baterie a nabíječky pro notebooky',
@@ -149,6 +150,7 @@ class SharedStockCatalogSeeder extends Seeder
                 ->map(fn (string $model) => $this->upsertCompatibilityModel('Asus', $model)->id)
                 ->all()
         );
+        });
     }
 
     private function upsertProduct(

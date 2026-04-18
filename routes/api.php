@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')
+    ->name('api.admin.')
     ->middleware(['auth:sanctum', 'admin'])
     ->group(function () {
         Route::apiResource('products', ProductController::class);
@@ -37,7 +38,7 @@ Route::prefix('admin')
         Route::apiResource('customers', CustomerController::class);
 
         // Orders are read-only; status updates via PATCH
-        Route::get('orders', [OrderController::class, 'index']);
-        Route::get('orders/{order}', [OrderController::class, 'show']);
-        Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus']);
+        Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+        Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
     });

@@ -13,7 +13,8 @@ class ModelSeoLandingSeeder extends Seeder
 {
     public function run(): void
     {
-        $category = Category::query()->updateOrCreate(
+        Product::withoutSyncingToSearch(function () {
+            $category = Category::query()->updateOrCreate(
             ['slug' => 'baterie-a-nabijecky-notebooky'],
             [
                 'name' => 'Baterie a nabíječky pro notebooky',
@@ -91,6 +92,7 @@ class ModelSeoLandingSeeder extends Seeder
             $product->categories()->syncWithoutDetaching([$category->id]);
             $product->compatibilityModels()->syncWithoutDetaching([$model->id]);
         }
+        });
     }
 
     private function upsertCompatibilityModel(string $brand, string $modelName): CompatibilityModel
