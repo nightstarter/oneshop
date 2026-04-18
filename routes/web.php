@@ -13,6 +13,7 @@ use App\Http\Controllers\AdminWeb\CategoryController as AdminCategoryController;
 use App\Http\Controllers\AdminWeb\CustomerController as AdminCustomerController;
 use App\Http\Controllers\AdminWeb\DashboardController as AdminDashboardController;
 use App\Http\Controllers\AdminWeb\OrderController as AdminOrderController;
+use App\Http\Controllers\AdminWeb\ProductCompositionController as AdminProductCompositionController;
 use App\Http\Controllers\AdminWeb\ProductImageController as AdminProductImageController;
 use App\Http\Controllers\AdminWeb\PaymentTransactionController as AdminPaymentTransactionController;
 use App\Http\Controllers\AdminWeb\PaymentMethodController as AdminPaymentMethodController;
@@ -86,6 +87,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('products', AdminProductController::class)->except(['show']);
+    Route::post('products/{product}/composition', [AdminProductCompositionController::class, 'store'])->name('products.composition.store');
+    Route::patch('products/{product}/composition/{component}', [AdminProductCompositionController::class, 'update'])->name('products.composition.update');
+    Route::delete('products/{product}/composition/{component}', [AdminProductCompositionController::class, 'destroy'])->name('products.composition.destroy');
+
     Route::post('products/{product}/images', [AdminProductImageController::class, 'store'])->name('products.images.store');
     Route::patch('products/{product}/images/{productImage}', [AdminProductImageController::class, 'update'])->name('products.images.update');
     Route::post('products/{product}/images/{productImage}/main', [AdminProductImageController::class, 'makePrimary'])->name('products.images.main');

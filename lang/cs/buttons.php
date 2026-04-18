@@ -26,4 +26,5 @@ return [
     'remove' => 'Odebrat',
     'upload_images' => 'Nahrát obrázky',
     'set_as_main' => 'Nastavit jako hlavní',
+    'add_component' => 'Přidat komponentu',
 ];

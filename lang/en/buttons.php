@@ -26,4 +26,5 @@ return [
     'remove' => 'Remove',
     'upload_images' => 'Upload images',
     'set_as_main' => 'Set as main',
+    'add_component' => 'Add component',
 ];

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Scout\Searchable;
@@ -19,12 +20,18 @@ class Product extends Model
         'name',
         'slug',
         'description',
+        'stock_item_id',
+        'price',
+        'active',
+        'visibility',
         'base_price_net',
         'stock_qty',
         'is_active',
     ];
 
     protected $casts = [
+        'price' => 'decimal:2',
+        'active' => 'boolean',
         'base_price_net' => 'decimal:2',
         'is_active' => 'boolean',
     ];
@@ -36,7 +43,7 @@ class Product extends Model
 
     public function shouldBeSearchable(): bool
     {
-        return $this->is_active;
+        return $this->isActiveForSale();
     }
 
     public function toSearchableArray(): array
@@ -47,8 +54,9 @@ class Product extends Model
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description ?? '',
+            'price' => (float) ($this->price ?? $this->base_price_net),
             'base_price_net' => (float) $this->base_price_net,
-            'is_active' => (bool) $this->is_active,
+            'is_active' => $this->isActiveForSale(),
             'categories' => $this->categories->pluck('name')->values()->all(),
             'created_at_timestamp' => $this->created_at?->timestamp ?? now()->timestamp,
         ];
@@ -85,6 +93,11 @@ class Product extends Model
         return $query->with('categories');
     }
 
+    public function stockItem(): BelongsTo
+    {
+        return $this->belongsTo(StockItem::class);
+    }
+
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class);
@@ -110,11 +123,45 @@ class Product extends Model
             ->orderBy('id');
     }
 
+    public function compatibilityModels(): BelongsToMany
+    {
+        return $this->belongsToMany(CompatibilityModel::class, 'product_compatibilities')
+            ->withTimestamps();
+    }
+
+    public function productCompatibilities(): HasMany
+    {
+        return $this->hasMany(ProductCompatibility::class);
+    }
+
     public function images(): BelongsToMany
     {
         return $this->belongsToMany(MediaFile::class, 'product_images')
             ->withPivot(['sort_order', 'alt', 'is_primary'])
             ->withTimestamps()
             ->orderByPivot('sort_order');
+    }
+
+    public function isActiveForSale(): bool
+    {
+        if ($this->active !== null) {
+            return (bool) $this->active;
+        }
+
+        return (bool) $this->is_active;
+    }
+
+    public function availableQuantity(): int
+    {
+        return (int) ($this->stockItem?->availableQuantityForSale() ?? 0);
+    }
+
+    public function hasStock(int $requiredQty = 1): bool
+    {
+        $requiredQty = max(1, $requiredQty);
+
+        return $this->stockItem !== null
+            && $this->stockItem->active
+            && $this->stockItem->availableQuantityForSale() >= $requiredQty;
     }
 }

@@ -12,6 +12,7 @@ class OrderService
 {
     public function __construct(
         protected PriceCalculator $priceCalculator,
+        protected InventoryService $inventoryService,
     ) {
     }
 
@@ -102,6 +103,8 @@ class OrderService
                 'price_vat' => round($totals['vat'], 2),
                 'price_gross' => round($totals['gross'], 2),
             ]);
+
+            $this->inventoryService->deductForOrder($order);
 
             return $order->fresh('items');
         });

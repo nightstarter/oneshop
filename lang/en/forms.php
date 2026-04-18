@@ -14,6 +14,7 @@ return [
     'zip' => 'ZIP code',
     'country' => 'Country',
     'quantity' => 'Quantity',
+    'actions' => 'Actions',
     'note' => 'Note',
     'search_products' => 'Search products...',
     'search_by_sku_or_name' => 'Search by SKU or product name...',
@@ -21,6 +22,7 @@ return [
     'remember_me' => 'Remember me',
     'slug' => 'Slug',
     'code' => 'Code',
+    'component_stock_card' => 'Component (stock card)',
     'currency' => 'Currency',
     'valid_from' => 'Valid from',
     'valid_to' => 'Valid to',
@@ -48,6 +50,7 @@ return [
     'company_id' => 'Company ID',
     'vat_id' => 'VAT ID',
     'hold_ctrl' => 'Hold Ctrl to select multiple categories.',
+    'select_option' => '- select -',
     'image_upload_help' => 'You can select one or more images (JPG, PNG, WEBP, max 5 MB per file).',
     'placeholders' => [
         'search' => 'Search products...',

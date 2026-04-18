@@ -16,6 +16,12 @@ Laravel 10 kostra e-shopu bez variant produktů, s podporou:
 - MySQL 8
 - Laravel Scout (nainstalovaný, fáze 1 neaktivní — `SCOUT_DRIVER=null`)
 
+## Historie změn
+
+Detailní průběžná historie implementačních kroků je vedena v samostatném souboru:
+
+- [steps.md](steps.md)
+
 ## Hlavní doména
 
 ### Katalog
@@ -449,3 +455,99 @@ Po nasazení změn spusťte:
 ```powershell
 php artisan migrate
 ```
+
+## Sdílený sklad pro více produktových karet
+
+Následující model řeší situaci, kdy jedna fyzická skladová položka (např. baterie)
+je prodávána přes více produktových karet (např. "Baterie pro Asus X555L", "Baterie pro Asus X555LA").
+Sklad se vede pouze na úrovni `stock_items`.
+
+### Architektonické vysvětlení
+
+- `stock_items`: fyzické položky ve skladu (jediný zdroj pravdy pro množství)
+- `products`: produktové karty v e-shopu (SEO texty, landing pages, různé názvy)
+- `compatibility_models`: modely zařízení (např. notebook modely)
+- `product_compatibilities`: M:N vazba mezi produktovou kartou a kompatibilními modely
+
+Vazby:
+
+- 1 `stock_item` -> N `products`
+- 1 `product` -> N `compatibility_models` (přes pivot)
+
+### Migrace
+
+Nové migrace:
+
+- `2026_04_18_100100_create_stock_items_table.php`
+- `2026_04_18_100200_add_stock_item_and_visibility_to_products_table.php`
+- `2026_04_18_100300_create_compatibility_models_table.php`
+- `2026_04_18_100400_create_product_compatibilities_table.php`
+
+### Modely
+
+Nové modely:
+
+- `App\Models\StockItem`
+- `App\Models\CompatibilityModel`
+- `App\Models\ProductCompatibility`
+
+Upravený model:
+
+- `App\Models\Product` (relace na `stockItem`, `compatibilityModels`, helpery pro dostupnost)
+
+### Příklady použití
+
+#### 1) Dostupnost produktu přes stock item
+
+```php
+$product = Product::query()->with('stockItem')->findOrFail($productId);
+
+$availableQty = $product->availableQuantity();
+$isInStock = $product->hasStock(2);
+```
+
+#### 2) Odečet skladu po vytvoření objednávky
+
+Použijte servis `App\Services\InventoryService`:
+
+```php
+$inventoryService->deductForOrder($order);
+```
+
+Servis agreguje položky objednávky podle `stock_item_id`, zamkne záznamy `FOR UPDATE`
+a provede atomický odečet z `stock_items.quantity`.
+
+#### 3) Výpis kompatibilních modelů na detailu produktu
+
+```php
+$product = Product::query()
+	->with('compatibilityModels')
+	->findOrFail($productId);
+
+$models = $product->compatibilityModels
+	->where('active', true)
+	->map(fn ($m) => $m->brand . ' ' . $m->model_name);
+```
+
+### Rozšiřitelnost pro další typy zboží
+
+Typ fyzické položky je veden ve `stock_items.product_type` (např. `battery`, `charger`, `battery_kit`).
+To umožňuje:
+
+- sdílet společnou skladovou logiku napříč typy zboží
+- zachovat jednotné napojení přes `products.stock_item_id`
+- doplnit typově specifická pravidla bez změny základního skladu
+
+Pro složené sety (např. baterie + nabíječka) lze v další fázi přidat tabulku typu
+`stock_item_components` a počítat dostupnost setu jako minimum dostupností komponent.
+
+### SEO landing pages bez duplikace skladu
+
+Doporučený postup:
+
+1. Pro každý notebook model použít samostatnou produktovou kartu (`products`) s vlastním SEO obsahem (`name`, `slug`, `description`).
+2. Více těchto karet napojit na stejný `stock_item_id`.
+3. Kompatibilní modely držet v `compatibility_models` + pivot `product_compatibilities`.
+4. Pro landing stránky dle modelu použít route např. `/baterie/{model:slug}` a filtrovat produkty přes `compatibilityModels`.
+
+Výsledek: mnoho SEO vstupních stránek, ale jeden společný sklad bez duplikace množství.

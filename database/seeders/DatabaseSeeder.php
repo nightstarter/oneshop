@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminUserSeeder::class,
             ShippingAndPaymentMethodsSeeder::class,
+            SharedStockCatalogSeeder::class,
+            ModelSeoLandingSeeder::class,
         ]);
     }
 }

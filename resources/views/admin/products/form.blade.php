@@ -64,6 +64,93 @@
 
 @if ($isEdit)
     <div class="card mt-4">
+        <div class="card-header">{{ __('shop.admin.product_composition') }}</div>
+        <div class="card-body">
+            @if ($product->stockItem === null)
+                <p class="text-muted mb-0">{{ __('messages.product_composition_missing_stock_item') }}</p>
+            @else
+                <div class="mb-3">
+                    <div><strong>{{ __('shop.admin.primary_stock_card') }}:</strong> {{ $product->stockItem->name }}</div>
+                    <div class="small text-muted">SKU: {{ $product->stockItem->sku }} | {{ __('forms.quantity') }}: {{ $product->stockItem->quantity }}</div>
+                    @if ($product->stockItem->isKit())
+                        <div class="small text-muted">
+                            {{ __('shop.admin.max_sellable_set_stock') }}: <strong>{{ $product->stockItem->availableQuantityForSale() }}</strong>
+                        </div>
+                    @endif
+                </div>
+
+                @if ($product->stockItem->isKit())
+                    <form method="POST" action="{{ route('admin.products.composition.store', $product) }}" class="row g-2 mb-3">
+                        @csrf
+                        <div class="col-md-6">
+                            <label class="form-label">{{ __('forms.component_stock_card') }}</label>
+                            <select name="component_stock_item_id" class="form-select" required>
+                                <option value="">{{ __('forms.select_option') }}</option>
+                                @foreach ($availableComponentItems as $item)
+                                    <option value="{{ $item->id }}">
+                                        {{ $item->name }} ({{ $item->sku }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ __('forms.quantity') }}</label>
+                            <input type="number" name="quantity" class="form-control" min="1" value="1" required>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-outline-primary w-100" type="submit">{{ __('buttons.add_component') }}</button>
+                        </div>
+                    </form>
+                @endif
+
+                @if ($product->stockItem->kitComponents->isEmpty())
+                    <p class="mb-0">{{ __('messages.product_composition_single_item') }}</p>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('forms.code') }}</th>
+                                    <th>{{ __('forms.name') }}</th>
+                                    <th>{{ __('forms.quantity') }}</th>
+                                    <th>{{ __('shop.admin.stock') }}</th>
+                                    <th class="text-end">{{ __('forms.actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($product->stockItem->kitComponents as $component)
+                                    <tr>
+                                        <td>{{ $component->componentStockItem?->sku }}</td>
+                                        <td>{{ $component->componentStockItem?->name }}</td>
+                                        <td>
+                                            <form method="POST" action="{{ route('admin.products.composition.update', [$product, $component]) }}" class="d-flex gap-2">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="number" name="quantity" class="form-control form-control-sm" min="1" value="{{ $component->quantity }}" required style="max-width: 110px;">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">{{ __('buttons.update') }}</button>
+                                            </form>
+                                        </td>
+                                        <td>{{ $component->componentStockItem?->quantity ?? 0 }}</td>
+                                        <td class="text-end">
+                                            <form method="POST" action="{{ route('admin.products.composition.destroy', [$product, $component]) }}" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm(@js(__('messages.delete_confirm')))">
+                                                    {{ __('buttons.delete') }}
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            @endif
+        </div>
+    </div>
+
+    <div class="card mt-4">
         <div class="card-header">{{ __('shop.admin.product_images') }}</div>
         <div class="card-body">
             <form method="POST" action="{{ route('admin.products.images.store', $product) }}" enctype="multipart/form-data" class="row g-3 mb-4">

@@ -7,6 +7,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\StockItem;
 
 class ProductController extends Controller
 {
@@ -22,6 +23,7 @@ class ProductController extends Controller
         return view('admin.products.form', [
             'product' => new Product(),
             'categories' => Category::query()->where('is_active', true)->orderBy('name')->get(),
+            'availableComponentItems' => collect(),
             'selectedCategories' => [],
             'isEdit' => false,
         ]);
@@ -41,11 +43,25 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $product->load(['categories', 'productImages.mediaFile']);
+        $product->load([
+            'categories',
+            'productImages.mediaFile',
+            'stockItem.kitComponents.componentStockItem',
+        ]);
+
+        $availableComponentItems = collect();
+        if ($product->stockItem !== null) {
+            $availableComponentItems = StockItem::query()
+                ->where('active', true)
+                ->where('id', '!=', $product->stockItem->id)
+                ->orderBy('name')
+                ->get();
+        }
 
         return view('admin.products.form', [
             'product' => $product,
             'categories' => Category::query()->where('is_active', true)->orderBy('name')->get(),
+            'availableComponentItems' => $availableComponentItems,
             'selectedCategories' => $product->categories()->pluck('categories.id')->all(),
             'isEdit' => true,
         ]);
@@ -61,6 +77,12 @@ class ProductController extends Controller
 
         if ($categoryIds !== null) {
             $product->categories()->sync($categoryIds);
+        }
+
+        if ($product->stockItem?->isKit() && $product->stockItem->kitComponents()->count() === 0) {
+            return redirect()
+                ->route('admin.products.edit', $product)
+                ->withErrors(['composition' => __('messages.product_composition_kit_requires_components')]);
         }
 
         return redirect()->route('admin.products.index')->with('success', __('messages.product_updated'));
