@@ -20,7 +20,9 @@ use App\Http\Controllers\AdminWeb\PaymentMethodController as AdminPaymentMethodC
 use App\Http\Controllers\AdminWeb\PriceListController as AdminPriceListController;
 use App\Http\Controllers\AdminWeb\ProductController as AdminProductController;
 use App\Http\Controllers\AdminWeb\ShippingMethodController as AdminShippingMethodController;
+use App\Http\Controllers\AdminWeb\PageController as AdminPageController;
 use App\Http\Controllers\AdminWeb\ThemeController as AdminThemeController;
+use App\Http\Controllers\Frontend\PageController as FrontendPageController;
 use Illuminate\Support\Facades\Route;
 
 // ---------------------------------------------------------------------------
@@ -28,6 +30,9 @@ use Illuminate\Support\Facades\Route;
 // ---------------------------------------------------------------------------
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// CMS pages
+Route::get('/info/{slug}', [FrontendPageController::class, 'show'])->name('pages.show');
 
 Route::get('/products', [ProductCatalogController::class, 'index'])->name('products.index');
 Route::get('/category/{category:slug}', [ProductCatalogController::class, 'category'])->name('products.category');
@@ -110,5 +115,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     Route::get('payment-transactions', [AdminPaymentTransactionController::class, 'index'])->name('payment-transactions.index');
     Route::get('payment-transactions/{payment_transaction}', [AdminPaymentTransactionController::class, 'show'])->name('payment-transactions.show');
+
+    Route::resource('pages', AdminPageController::class)->except(['show']);
 });
 

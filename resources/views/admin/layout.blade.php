@@ -27,6 +27,7 @@
                 <li class="nav-item"><a class="nav-link" href="{{ route('admin.customers.index') }}">{{ __('shop.admin.customers') }}</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('admin.orders.index') }}">{{ __('shop.admin.orders') }}</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('admin.themes.index') }}">{{ __('shop.admin.themes') }}</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('admin.pages.index') }}">{{ __('shop.admin.pages') }}</a></li>
             </ul>
             <div class="d-flex gap-2">
                 <a href="{{ route('home') }}" class="btn btn-outline-light btn-sm">{{ __('shop.admin.frontend') }}</a>
@@ -62,5 +63,6 @@
     window.i18n = @json(\App\Support\JavaScriptTranslations::admin());
     window.appLocale = @json(app()->getLocale());
 </script>
+@stack('scripts')
 </body>
 </html>

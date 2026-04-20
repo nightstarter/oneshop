@@ -3,11 +3,15 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "postinstall": "node scripts/copy-tinymce.cjs"
     },
     "devDependencies": {
         "axios": "^1.6.4",
         "laravel-vite-plugin": "^1.0.0",
         "vite": "^5.0.0"
+    },
+    "dependencies": {
+        "tinymce": "^8.4.0"
     }
 }

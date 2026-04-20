@@ -62,4 +62,9 @@ return [
     'shipping_unavailable' => 'Vybraná doprava není dostupná.',
     'payment_incompatible' => 'Vybraná platba není kompatibilní s dopravou.',
     'pickup_point_required' => 'Pro dopravu Zásilkovna Box musíte vybrat výdejní místo.',
+    'page_created' => 'Stránka byla vytvořena.',
+    'page_updated' => 'Stránka byla upravena.',
+    'page_deleted' => 'Stránka byla smazána.',
+    'delete_page_confirm' => 'Smazat tuto stránku?',
+    'no_pages' => 'Zatím žádné stránky.',
 ];

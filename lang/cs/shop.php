@@ -133,5 +133,12 @@ return [
         'provider_code_shipping_hint' => 'např. gls_address, personal_pickup, zasilkovna_box',
         'provider_code_payment_hint' => 'např. bank_transfer, cash_on_delivery, comgate',
         'shipping_payment_compatibility_help' => 'Vyberte kompatibilní platby pro tuto dopravu.',
+        'pages' => 'Stránky',
+        'new_page' => 'Nová stránka',
+        'edit_page' => 'Upravit stránku',
+        'published' => 'Publikováno',
+        'published_at' => 'Publikováno dne',
+        'view_page' => 'Zobrazit stránku',
+        'updated_at' => 'Upraveno',
     ],
 ];

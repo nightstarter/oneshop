@@ -4,6 +4,7 @@
 /vendor/
 /public/build/
 /public/hot
+/public/js/tinymce/
 /public/storage
 /storage/*.key
 /storage/logs/*.log

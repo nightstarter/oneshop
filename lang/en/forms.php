@@ -56,4 +56,13 @@ return [
         'search' => 'Search products...',
         'note' => 'Order note',
     ],
+    'title' => 'Title',
+    'content' => 'Content',
+    'meta_title' => 'Meta title',
+    'meta_description' => 'Meta description',
+    'meta_title_placeholder' => 'Leave blank to use page title',
+    'meta_description_placeholder' => 'Short description for search engines (max 320 characters)',
+    'page_published' => 'Published',
+    'slug_hint' => 'Only lowercase letters, numbers and hyphens.',
+    'slug_pattern_hint' => 'Only lowercase letters (a-z), numbers and hyphens are allowed.',
 ];

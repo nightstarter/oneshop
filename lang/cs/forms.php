@@ -56,4 +56,13 @@ return [
         'search' => 'Hledat produkty...',
         'note' => 'Poznámka k objednávce',
     ],
+    'title' => 'Název',
+    'content' => 'Obsah',
+    'meta_title' => 'Meta název',
+    'meta_description' => 'Meta popis',
+    'meta_title_placeholder' => 'Nevyplněno = použije se název stránky',
+    'meta_description_placeholder' => 'Krátký popis pro vyhledávače (max 320 znaků)',
+    'page_published' => 'Publikováno',
+    'slug_hint' => 'Pouze malá písmena, číslice a pomlčky.',
+    'slug_pattern_hint' => 'Povoleny jsou pouze malá písmena (a-z), číslice a pomlčky.',
 ];

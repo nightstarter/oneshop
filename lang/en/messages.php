@@ -62,4 +62,9 @@ return [
     'shipping_unavailable' => 'The selected shipping method is not available.',
     'payment_incompatible' => 'The selected payment method is not compatible with the shipping method.',
     'pickup_point_required' => 'You must choose a pickup point for Zasilkovna Box shipping.',
+    'page_created' => 'Page was created.',
+    'page_updated' => 'Page was updated.',
+    'page_deleted' => 'Page was deleted.',
+    'delete_page_confirm' => 'Delete this page?',
+    'no_pages' => 'No pages yet.',
 ];

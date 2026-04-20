@@ -132,5 +132,12 @@ return [
         'provider_code_shipping_hint' => 'e.g. gls_address, personal_pickup, zasilkovna_box',
         'provider_code_payment_hint' => 'e.g. bank_transfer, cash_on_delivery, comgate',
         'shipping_payment_compatibility_help' => 'Select compatible payment methods for this shipping method.',
+        'pages' => 'Pages',
+        'new_page' => 'New page',
+        'edit_page' => 'Edit page',
+        'published' => 'Published',
+        'published_at' => 'Published at',
+        'view_page' => 'View page',
+        'updated_at' => 'Updated at',
     ],
 ];

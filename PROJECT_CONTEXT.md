@@ -91,7 +91,56 @@
 - Admin web CRUD pro produkty, kategorie, cenniky, zakazniky, dopravy, platby, objednavky, payment transactions, themes
 - Admin API endpointy pro products/categories/price-lists/customers/orders
 
-## 7. Co je rozpracovane
+## 7. CMS modul (stránky)
+
+### Popis
+Jednoduchý interní CMS pro správu statických obsahových stránek e-shopu.
+
+### Datový model
+- Tabulka `pages`: `id`, `title`, `slug` (unique), `content` (longText/HTML), `meta_title`, `meta_description`, `is_published` (bool), `published_at` (timestamp), `created_at`, `updated_at`
+- Model: `app/Models/Page.php` — scope `scopePublished()`, casty `is_published` → bool, `published_at` → datetime
+
+### Soubory modulu
+| Soubor | Role |
+|--------|------|
+| `database/migrations/2026_04_20_100000_create_pages_table.php` | Migrace |
+| `app/Models/Page.php` | Model |
+| `app/Http/Requests/StorePageRequest.php` | Validace vytvoření |
+| `app/Http/Requests/UpdatePageRequest.php` | Validace editace (slug `unique()->ignore()`) |
+| `app/Http/Controllers/AdminWeb/PageController.php` | Admin CRUD |
+| `app/Http/Controllers/Frontend/PageController.php` | Frontend zobrazení |
+| `resources/views/admin/pages/index.blade.php` | Admin seznam |
+| `resources/views/admin/pages/form.blade.php` | Admin formulář + TinyMCE + auto-slug |
+| `resources/themes/default/pages/show.blade.php` | Frontend view |
+
+### Routy
+- `GET /info/{slug}` → `Frontend\PageController@show` (veřejná, pouze publikované; 404 jinak)
+- `GET|POST /admin/pages` → seznam + vytvoření
+- `GET /admin/pages/create` → formulář
+- `GET|PUT|DELETE /admin/pages/{page}` → editace, smazání
+- Admin routy: middleware `['auth', 'admin']`
+
+### WYSIWYG editor
+- TinyMCE 8 nainstalován přes npm (`npm install tinymce`), **self-hosted bez CDN**
+- Assety jsou v `public/js/tinymce/` (zkopírovány npm `postinstall` skriptem `scripts/copy-tinymce.cjs`)
+- Načten přes `@push('scripts')` pouze na stránce formuláře: `<script src="/js/tinymce/tinymce.min.js">`
+- Konfigurace: `license_key: 'gpl'` (open-source verze, bez API klíče, bez CDN notifikací)
+- Po každém `npm install` se assety automaticky zkopírují; lze také ručně: `node scripts/copy-tinymce.cjs`
+- Složka `public/js/tinymce/` je doporučeno přidat do `.gitignore` (generovaný artefakt)
+
+### XSS přístup
+- Obsah zadávají výhradně autentizovaní admini (middleware `auth` + `is_admin`)
+- Ukládá se jako raw HTML, renderuje se pomocí `{!! $page->content !!}`
+- Nikdy nevystavovat toto pole uživatelům bez `is_admin`
+
+### Budoucí rozšíření (připravená místa)
+- **Preview**: `scopePublished()` jednoduše odstranit pro admin preview route
+- **Draft / plánované publikování**: `published_at` sloupec je připraven
+- **Menu**: `Page::published()->get(['title','slug'])` kdekoli v layoutu
+- **Více jazyků**: model obalit `spatie/laravel-translatable`
+- **Řazení**: přidat `sort_order` sloupec do migrace + `orderBy()` do scopePublished
+
+## 8. Co je rozpracovane
 - Search Phase 2 (Scout/Typesense) je pripraveny, ale aktivni binding zustava na MysqlProductSearch
 - Produktovy model/schema je prechodovy:
   - existuje stary i novy naming sloupcu (is_active + active, base_price_net + price, stock_qty + stock_item_id)
