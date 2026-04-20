@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Services\Import\ImportReport;
 use App\Services\Import\LegacyProductImportService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -64,65 +65,65 @@ class ImportLegacyProducts extends Command
         }
 
         $report  = new ImportReport();
-        $service = $isDryRun ? null : new LegacyProductImportService($report);
+        $service = new LegacyProductImportService($report);
 
         // ── 1. Nosné produkty ───────────────────────────────────────────
         if ($path = $this->option('products')) {
-            $this->processFile(
-                label:   'Nosné produkty',
-                path:    $path,
-                handler: static function (array $row) use ($service, $report, $isDryRun): void {
-                    if ($isDryRun) {
-                        $report->incCreated(); // dry-run: just count
-                        return;
-                    }
-                    $service->importCarrierRow($row);
-                },
+            $this->runImportPass(
+                isDryRun: $isDryRun,
+                callback: fn () => $this->processFile(
+                    label:   'Nosné produkty',
+                    path:    $path,
+                    handler: static function (array $row) use ($service): void {
+                        $service->importCarrierRow($row);
+                    },
+                    requiredHeaderKey: 'ItemCode',
+                )
             );
         }
 
         // ── 2. SEO produkty ────────────────────────────────────────────
         if ($path = $this->option('seo')) {
-            $this->processFile(
-                label:   'SEO produkty',
-                path:    $path,
-                handler: static function (array $row) use ($service, $report, $isDryRun): void {
-                    if ($isDryRun) {
-                        $report->incSeoCreated();
-                        return;
-                    }
-                    $service->importSeoRow($row);
-                },
+            $this->runImportPass(
+                isDryRun: $isDryRun,
+                callback: fn () => $this->processFile(
+                    label:   'SEO produkty',
+                    path:    $path,
+                    handler: static function (array $row) use ($service): void {
+                        $service->importSeoRow($row);
+                    },
+                    requiredHeaderKey: 'SeoSku',
+                )
             );
         }
 
         // ── 3. exModel vazby ───────────────────────────────────────────
         if ($path = $this->option('models')) {
-            $this->processFile(
-                label:   'exModel (modely zařízení)',
-                path:    $path,
-                handler: static function (array $row) use ($service, $report, $isDryRun): void {
-                    if ($isDryRun) {
-                        $report->incModelLinks();
-                        return;
-                    }
-                    $service->importDeviceModelRow($row);
-                },
+            $this->runImportPass(
+                isDryRun: $isDryRun,
+                callback: fn () => $this->processFile(
+                    label:   'exModel (modely zařízení)',
+                    path:    $path,
+                    handler: static function (array $row) use ($service): void {
+                        $service->importDeviceModelRow($row);
+                    },
+                    requiredHeaderKey: 'exArtId',
+                )
             );
         }
 
         // ── 4. exTyp vazby ─────────────────────────────────────────────
         if ($path = $this->option('types')) {
-            $this->processFile(
-                label:   'exTyp (typová označení)',
-                path:    $path,
-                handler: static function (array $row) use ($service, $report, $isDryRun): void {
-                    if ($isDryRun) {
-                        $report->incPartNumLinks();
-                        return;
-                    }
-                    $service->importPartNumberRow($row);
-                },
+            $this->runImportPass(
+                isDryRun: $isDryRun,
+                callback: fn () => $this->processFile(
+                    label:   'exTyp (typová označení)',
+                    path:    $path,
+                    handler: static function (array $row) use ($service): void {
+                        $service->importPartNumberRow($row);
+                    },
+                    requiredHeaderKey: 'exArtId',
+                )
             );
         }
 
@@ -141,7 +142,12 @@ class ImportLegacyProducts extends Command
     /**
      * Reads a CSV file line by line and calls $handler for each data row.
      */
-    private function processFile(string $label, string $path, callable $handler): void
+    private function processFile(
+        string $label,
+        string $path,
+        callable $handler,
+        ?string $requiredHeaderKey = null,
+    ): void
     {
         $fullPath = base_path(ltrim($path, '/\\'));
 
@@ -174,6 +180,17 @@ class ImportLegacyProducts extends Command
 
         // Normalize encoding if needed
         $header = $this->normalizeEncoding($rawHeader, $encoding);
+
+        if ($requiredHeaderKey !== null && ! in_array($requiredHeaderKey, $header, true)) {
+            $hint = '';
+            if (count($header) === 1 && str_contains((string) $header[0], ';') && $separator !== ';') {
+                $hint = ' (pravděpodobně špatný --separator, zkus --separator=;)';
+            }
+
+            $this->error("Chybí povinná hlavička '{$requiredHeaderKey}' v souboru {$fullPath}{$hint}");
+            fclose($handle);
+            return;
+        }
 
         $lineNum = 1;
         $bar     = null;
@@ -209,6 +226,23 @@ class ImportLegacyProducts extends Command
 
         fclose($handle);
         $this->line("  → {$label}: hotovo ({$lineNum} řádků).");
+    }
+
+    private function runImportPass(bool $isDryRun, callable $callback): void
+    {
+        if (! $isDryRun) {
+            $callback();
+            return;
+        }
+
+        DB::beginTransaction();
+        try {
+            $callback();
+            DB::rollBack();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     private function printReport(ImportReport $report, bool $isDryRun): void

@@ -323,20 +323,27 @@ Expected CSV headers (checklist):
 
 | Soubor | Povinne sloupce | Doporucene volitelne sloupce |
 |---|---|---|
-| `products.csv` | `ItemCode` | `ItemName`, `Typ`, `InfoText`, `Cena1`, `Cena2`, `Cena5`, `Cena6`, `Cena7`, `Cena8`, `Dispo`, `Berlin_Stav`, `Berlin_Datum`, `Vyprodej`, `Kapacita`, `Volt`, `Plug`, `Barva`, `Hmotnost`, `KatalogoveCislo`, `Vyrobce`, `ModelGroup`, `ModelTyp`, `Ean`, `Original`, `Nadotaz`, `GrpId`, `sphinx_id` |
+| `products.csv` | `ItemCode` | `ItemName`, `Typ`, `InfoText`, `Cena1`, `Cena2`, `Cena5`, `Cena6`, `Cena7`, `Cena8`, `Dispo`, `Berlin_Stav`, `Berlin_Datum`, `Vyprodej`, `Kapacita`, `Volt`, `Plug`, `Barva`, `Hmotnost`, `KatalogoveCislo`, `Vyrobce`, `ModelGroup`, `ModelTyp`, `Ean`, `Original`, `Nadotaz`, `GrpId`, `sphinx_id`, `Obrazek`, `Obrazek2` |
 | `ex_models.csv` | `exArtId`, `exModel` | `exID` |
 | `ex_types.csv` | `exArtId`, `exTyp` | `exID` |
 | `seo_products.csv` | `SeoSku`, `ParentItemCode` | `SeoName`, `SeoSlug`, `SeoDescription`, `LinkedModel` |
 
 Dulezite pro `products.csv`:
 
-- sloupec `Typ` urcuje `product_type_id`
-- mapovani v importu:
-	- `battery`, `baterie`, `bat` -> `battery`
-	- `charger`, `nabijecka`, `chg`, `adapter`, `adaptér`, `adp` -> `charger`
-	- `battery_kit`, `kit`, `set` -> `battery_kit`
-- pokud hodnota `Typ` neodpovida mape, produkt se ulozi bez typu (`product_type_id = null`)
+- sloupec `Typ` uz neurcuje `product_type_id`; importuje se jako parametr chemie baterie (`chemistry`)
+- urceni `product_type_id` probiha podminkami:
+	- pokud `ItemName` obsahuje `nabijecka` (resp. `nabíječka`) nebo `charger` -> `charger`
+	- jinak pokud je `Typ` neprazdny -> `battery`
+	- jinak -> `product_type_id = null`
+Import obrazku produktu:
 
+- sloupec `Obrazek` – nazev souboru hlavniho obrazku produktu (napr. `bat-001.jpg`)
+- sloupec `Obrazek2` – dalsi obrazky oddelene carkou (napr. `bat-001-b.jpg,bat-001-c.jpg`)
+- soubory musi fyzicky existovat na disku `private_products` (viz `PRODUCT_IMAGES_PATH`)
+- import hleda soubor primo v koreni disku i v podadresarich prvni urovne (napr. `2024/01/bat-001.jpg`)
+- zarucena deduplikace pres sha256 checksum – stejny soubor se do `media_files` ulozi jen jednou
+- pokud soubor na disku nenalezen, zapise se chyba do reportu a import pokracuje dal
+- pocet napojenych obrazku je vykazan v reportu (`Napojene obrazky`)
 ### 3) Dry-run import (bez zapisu)
 
 ```powershell

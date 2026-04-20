@@ -16,6 +16,7 @@ final class ImportReport
     private int   $partNumLinks  = 0;
     private int   $priceRows     = 0;
     private int   $stockRows     = 0;
+    private int   $imageLinks    = 0;
     private int   $skipped       = 0;
     /** @var list<array{sku: string, reason: string}> */
     private array $errors        = [];
@@ -30,6 +31,7 @@ final class ImportReport
     public function incPartNumLinks(int $n = 1): void { $this->partNumLinks += $n; }
     public function incPriceRows(int $n = 1): void    { $this->priceRows    += $n; }
     public function incStockRows(int $n = 1): void    { $this->stockRows    += $n; }
+    public function incImageLinks(int $n = 1): void   { $this->imageLinks   += $n; }
     public function incSkipped(): void { $this->skipped++; }
 
     public function addError(string $sku, string $reason): void
@@ -47,6 +49,7 @@ final class ImportReport
     public function partNumLinks(): int { return $this->partNumLinks; }
     public function priceRows(): int    { return $this->priceRows; }
     public function stockRows(): int    { return $this->stockRows; }
+    public function imageLinks(): int   { return $this->imageLinks; }
     public function skipped(): int      { return $this->skipped; }
     public function errorCount(): int   { return count($this->errors); }
 
@@ -69,6 +72,7 @@ final class ImportReport
             "Vazby typových označení: {$this->partNumLinks}",
             "Řádky cen            : {$this->priceRows}",
             "Řádky skladů         : {$this->stockRows}",
+            "Napojené obrázky     : {$this->imageLinks}",
             "Přeskočeno (prázdné) : {$this->skipped}",
             "Chyby                : {$this->errorCount()}",
         ];

@@ -8,6 +8,8 @@ use App\Models\ProductImage;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use FilesystemIterator;
+use RuntimeException;
 
 /**
  * Bulk-importuje obrázky z disku private_products do tabulky media_files.
@@ -63,8 +65,9 @@ class ImportProductImages extends Command
             $this->warn('DRY-RUN: žádné zápisy do databáze.');
         }
 
-        $disk  = Storage::disk('private_products');
-        $files = $disk->allFiles($subdir ?: '');
+        // Storage::allFiles() on local disk disallows symbolic links by default.
+        // We use an explicit scanner so imports can traverse symlinked directories.
+        $files = $this->collectFilesFollowSymlinks($subdir ?: '');
 
         // Only image files
         $imageFiles = array_values(array_filter(
@@ -163,27 +166,19 @@ class ImportProductImages extends Command
      */
     private function linkToProduct(MediaFile $mediaFile): int
     {
-        $basename  = pathinfo($mediaFile->original_name ?? $mediaFile->path, PATHINFO_FILENAME);
+        $basename = pathinfo($mediaFile->original_name ?? $mediaFile->path, PATHINFO_FILENAME);
 
-        // Try exact SKU match first, then prefix match (separated by -, _, space, .)
-        $product = Product::where('sku', $basename)->first()
-            ?? Product::where(
-                DB::raw('?'),
-                'LIKE',
-                // Use raw comparison: filename starts with sku + separator
-                // We check a set of likely SKUs by finding products whose SKU
-                // is a leading substring of the filename.
-                $basename
-            )->first();
-
-        // Simpler: query products whose SKU is a prefix of the basename
-        if ($product === null) {
-            $product = Product::whereRaw(
-                "? LIKE CONCAT(sku, '%')",
-                [$basename]
-            )->orderByRaw('LENGTH(sku) DESC') // longest match wins
+        // Longest SKU wins: exact match, or SKU followed by a known separator.
+        $product = Product::whereRaw(
+            '? = sku
+            OR ? LIKE CONCAT(sku, "-%")
+            OR ? LIKE CONCAT(sku, "_%")
+            OR ? LIKE CONCAT(sku, " %")
+            OR ? LIKE CONCAT(sku, ".%")',
+            [$basename, $basename, $basename, $basename, $basename]
+        )
+            ->orderByRaw('LENGTH(sku) DESC')
             ->first();
-        }
 
         if ($product === null) {
             return 0;
@@ -223,5 +218,60 @@ class ImportProductImages extends Command
         }
         $info = @getimagesize($absolutePath);
         return $info ? [$info[0], $info[1]] : [null, null];
+    }
+
+    /**
+     * Returns file paths relative to private_products root.
+     * Traverses symlinked directories and prevents infinite loops with realpath tracking.
+     */
+    private function collectFilesFollowSymlinks(string $subdir = ''): array
+    {
+        $root = rtrim((string) config('filesystems.disks.private_products.root'), '/\\');
+        if ($root === '' || ! is_dir($root)) {
+            throw new RuntimeException('Disk private_products root neexistuje nebo neni adresar: ' . $root);
+        }
+
+        $start = $subdir !== ''
+            ? $root . DIRECTORY_SEPARATOR . ltrim($subdir, '/\\')
+            : $root;
+
+        if (! is_dir($start)) {
+            throw new RuntimeException('Subdir neexistuje: ' . $start);
+        }
+
+        $queue = [$start];
+        $seenRealDirs = [];
+        $files = [];
+
+        while ($dir = array_pop($queue)) {
+            $realDir = realpath($dir) ?: $dir;
+            if (isset($seenRealDirs[$realDir])) {
+                continue;
+            }
+            $seenRealDirs[$realDir] = true;
+
+            $iterator = new FilesystemIterator($dir, FilesystemIterator::SKIP_DOTS);
+            foreach ($iterator as $item) {
+                $pathName = $item->getPathname();
+
+                if ($item->isDir()) {
+                    $queue[] = $pathName;
+                    continue;
+                }
+
+                if (! $item->isFile()) {
+                    continue;
+                }
+
+                if (strpos($pathName, $root) !== 0) {
+                    continue;
+                }
+
+                $relative = ltrim(substr($pathName, strlen($root)), '/\\');
+                $files[] = str_replace('\\', '/', $relative);
+            }
+        }
+
+        return $files;
     }
 }
