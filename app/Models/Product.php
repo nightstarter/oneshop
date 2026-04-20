@@ -16,10 +16,17 @@ class Product extends Model
     use Searchable;
 
     protected $fillable = [
+        'product_type_id',
+        'parent_product_id',
+        'linked_device_model_id',
         'sku',
+        'legacy_item_code',
+        'legacy_group_id',
+        'legacy_sphinx_id',
         'name',
         'slug',
         'description',
+        'legacy_payload',
         'stock_item_id',
         'price',
         'active',
@@ -34,6 +41,7 @@ class Product extends Model
         'active' => 'boolean',
         'base_price_net' => 'decimal:2',
         'is_active' => 'boolean',
+        'legacy_payload' => 'array',
     ];
 
     public function searchableAs(): string
@@ -98,6 +106,84 @@ class Product extends Model
         return $this->belongsTo(StockItem::class);
     }
 
+    // ── SEO / Carrier product relations ────────────────────────────────────
+
+    /**
+     * Nosný (carrier) produkt pro tento SEO produkt.
+     * NULL pokud je tento produkt sám nosným produktem.
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'parent_product_id');
+    }
+
+    /**
+     * SEO produkty odvozené od tohoto nosného produktu.
+     */
+    public function seoVariants(): HasMany
+    {
+        return $this->hasMany(Product::class, 'parent_product_id');
+    }
+
+    /**
+     * Konkrétní model zařízení, na který je tento SEO produkt navázán (volitelné).
+     */
+    public function linkedDeviceModel(): BelongsTo
+    {
+        return $this->belongsTo(DeviceModel::class, 'linked_device_model_id');
+    }
+
+    // ── Catalog compatibility relations ────────────────────────────────────
+
+    /**
+     * Kompatibilní modely zařízení. Platí pouze pro nosný produkt.
+     */
+    public function deviceModels(): BelongsToMany
+    {
+        return $this->belongsToMany(DeviceModel::class, 'catalog_product_device_models')
+            ->withTimestamps()
+            ->orderBy('brand')
+            ->orderBy('model_name');
+    }
+
+    /**
+     * Typová označení / part numbers. Platí pouze pro nosný produkt.
+     */
+    public function partNumbers(): BelongsToMany
+    {
+        return $this->belongsToMany(PartNumber::class, 'catalog_product_part_numbers')
+            ->withTimestamps()
+            ->orderBy('value');
+    }
+
+    // ── SEO product helpers ────────────────────────────────────────────────
+
+    public function isCarrier(): bool
+    {
+        return $this->parent_product_id === null;
+    }
+
+    public function isSeoProduct(): bool
+    {
+        return $this->parent_product_id !== null;
+    }
+
+    /**
+     * Returns this product's carrier (self if already a carrier).
+     * Useful when you need compatibility data regardless of product type.
+     */
+    public function carrierProduct(): Product
+    {
+        return $this->isSeoProduct()
+            ? ($this->parent ?? $this)
+            : $this;
+    }
+
+    public function productType(): BelongsTo
+    {
+        return $this->belongsTo(ProductType::class);
+    }
+
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class);
@@ -121,6 +207,34 @@ class Product extends Model
             ->orderByDesc('is_primary')
             ->orderBy('sort_order')
             ->orderBy('id');
+    }
+
+    public function attributeValues(): HasMany
+    {
+        return $this->hasMany(ProductAttributeValue::class)
+            ->with('attribute')
+            ->orderBy('id');
+    }
+
+    public function attributes(): BelongsToMany
+    {
+        return $this->belongsToMany(ProductAttribute::class, 'product_attribute_values', 'product_id', 'attribute_id')
+            ->withPivot(['value_text', 'value_number', 'value_boolean', 'value_json', 'value_unit'])
+            ->withTimestamps();
+    }
+
+    public function productPrices(): HasMany
+    {
+        return $this->hasMany(ProductPrice::class)
+            ->orderByDesc('valid_from')
+            ->orderByDesc('id');
+    }
+
+    public function productStocks(): HasMany
+    {
+        return $this->hasMany(ProductStock::class)
+            ->with('warehouse')
+            ->orderByDesc('id');
     }
 
     public function compatibilityModels(): BelongsToMany
@@ -153,12 +267,22 @@ class Product extends Model
 
     public function availableQuantity(): int
     {
+        if ($this->relationLoaded('productStocks') ? $this->productStocks->isNotEmpty() : $this->productStocks()->exists()) {
+            return (int) $this->productStocks()
+                ->selectRaw('SUM(GREATEST(quantity_on_hand - quantity_reserved, 0)) as available_total')
+                ->value('available_total');
+        }
+
         return (int) ($this->stockItem?->availableQuantityForSale() ?? 0);
     }
 
     public function hasStock(int $requiredQty = 1): bool
     {
         $requiredQty = max(1, $requiredQty);
+
+        if ($this->relationLoaded('productStocks') ? $this->productStocks->isNotEmpty() : $this->productStocks()->exists()) {
+            return $this->availableQuantity() >= $requiredQty;
+        }
 
         return $this->stockItem !== null
             && $this->stockItem->active

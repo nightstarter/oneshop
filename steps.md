@@ -62,6 +62,29 @@ Use it as a lightweight project timeline.
   - For kits, also deducts each component stock card according to composition ratio
 - Integrated automatic stock deduction into order creation flow (`OrderService`).
 
+## 2026-04-20
+
+### 1. Flexible product data model (EAV + ceny + sklady)
+- Added product typing and attribute schema for batteries/chargers/adapters.
+- Added price rows per price list and stock rows per warehouse.
+- Added supporting tables and model relations for attribute values, product prices, and product stocks.
+
+### 2. Compatibility by device model and part number
+- Added dedicated entities for `device_models` and `part_numbers`.
+- Added pivot relations from products to compatible models and part numbers.
+- Extended MySQL search scoring to include compatibility hits.
+- Updated product detail rendering to show compatibility data.
+
+### 3. Seeders for reference catalog data
+- Added `ProductTypesSeeder`, `ProductAttributesSeeder`, `WarehousesSeeder`, and `PriceListsSeeder`.
+- Registered these seeders in `DatabaseSeeder` in dependency-safe order.
+
+### 4. Legacy CSV import pipeline
+- Added `LegacyProductImportService` with idempotent upsert workflow.
+- Added `ImportReport` value object for import counters and error logging.
+- Added artisan command `import:legacy-products` with options for products/models/types/seo files.
+- Added dry-run mode and optional CSV export of errors.
+
 ## How to update this file
 - Append a new dated section for each work session.
 - Keep entries short and factual.

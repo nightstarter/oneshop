@@ -46,7 +46,7 @@ return [
 
         'private_products' => [
             'driver' => 'local',
-            'root' => storage_path('app/private/products'),
+            'root' => env('PRODUCT_IMAGES_PATH', storage_path('app/private/products')),
             'throw' => false,
         ],
 

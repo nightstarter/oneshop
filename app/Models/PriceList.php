@@ -37,4 +37,11 @@ class PriceList extends Model
             ->withPivot('price_net')
             ->withTimestamps();
     }
+
+    public function productPrices(): HasMany
+    {
+        return $this->hasMany(ProductPrice::class)
+            ->orderByDesc('valid_from')
+            ->orderByDesc('id');
+    }
 }

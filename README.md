@@ -291,6 +291,133 @@ V administraci je nova sekce `Transakce`:
 - seznam: `admin/payment-transactions`
 - detail: `admin/payment-transactions/{id}`
 
+## Seedery a import legacy katalogu
+
+Projekt obsahuje seedery referencnich dat a idempotentni import legacy CSV souboru
+pro produkty, kompatibilni modely, typova oznaceni a SEO karty.
+
+### 1) Pripravit databazi
+
+```powershell
+php artisan migrate
+php artisan db:seed
+```
+
+`db:seed` spousti mimo jine i tyto seedery:
+
+- `ProductTypesSeeder`
+- `ProductAttributesSeeder`
+- `WarehousesSeeder`
+- `PriceListsSeeder`
+
+### 2) Pripravit importni soubory
+
+Podporovane vstupy (CSV s hlavickou):
+
+- `products.csv` - legacy produktovy export
+- `ex_models.csv` - vazby modelu (`exID`, `exArtId`, `exModel`)
+- `ex_types.csv` - vazby typovych oznaceni (`exID`, `exArtId`, `exTyp`)
+- `seo_products.csv` - volitelne SEO produktove karty
+
+Expected CSV headers (checklist):
+
+| Soubor | Povinne sloupce | Doporucene volitelne sloupce |
+|---|---|---|
+| `products.csv` | `ItemCode` | `ItemName`, `Typ`, `InfoText`, `Cena1`, `Cena2`, `Cena5`, `Cena6`, `Cena7`, `Cena8`, `Dispo`, `Berlin_Stav`, `Berlin_Datum`, `Vyprodej`, `Kapacita`, `Volt`, `Plug`, `Barva`, `Hmotnost`, `KatalogoveCislo`, `Vyrobce`, `ModelGroup`, `ModelTyp`, `Ean`, `Original`, `Nadotaz`, `GrpId`, `sphinx_id` |
+| `ex_models.csv` | `exArtId`, `exModel` | `exID` |
+| `ex_types.csv` | `exArtId`, `exTyp` | `exID` |
+| `seo_products.csv` | `SeoSku`, `ParentItemCode` | `SeoName`, `SeoSlug`, `SeoDescription`, `LinkedModel` |
+
+Dulezite pro `products.csv`:
+
+- sloupec `Typ` urcuje `product_type_id`
+- mapovani v importu:
+	- `battery`, `baterie`, `bat` -> `battery`
+	- `charger`, `nabijecka`, `chg`, `adapter`, `adaptér`, `adp` -> `charger`
+	- `battery_kit`, `kit`, `set` -> `battery_kit`
+- pokud hodnota `Typ` neodpovida mape, produkt se ulozi bez typu (`product_type_id = null`)
+
+### 3) Dry-run import (bez zapisu)
+
+```powershell
+php artisan import:legacy-products \
+	--products=storage/import/products.csv \
+	--models=storage/import/ex_models.csv \
+	--types=storage/import/ex_types.csv \
+	--dry-run
+```
+
+### 4) Realny import
+
+```powershell
+php artisan import:legacy-products \
+	--products=storage/import/products.csv \
+	--models=storage/import/ex_models.csv \
+	--types=storage/import/ex_types.csv \
+	--seo=storage/import/seo_products.csv \
+	--errors-csv=storage/import/errors.csv
+```
+
+Volitelne parametry:
+
+- `--separator=;` pro strednikovy CSV export
+- `--encoding=Windows-1250` pro starsi exporty v CP1250
+
+### 5) Co command importuje
+
+- nosne produkty (`sku`, typ produktu, aktivita, fallback sloupce)
+- atributy do `product_attribute_values`
+- ceny do `product_prices` (mapa `Cena1..Cena8` na ceníky)
+- skladove stavy do `product_stocks` (`MAIN`, `BERLIN`, `SALE`)
+- kompatibilni modely (`device_models`) a typova oznaceni (`part_numbers`)
+- SEO produkty navazane na nosny produkt
+
+Import je idempotentni (`updateOrCreate`) a po behu vypise souhrn:
+
+- vytvorene/aktualizovane produkty
+- vytvorene/aktualizovane SEO produkty
+- pocet vazeb modelu a typovych oznaceni
+- pocet cenovych a skladovych zaznamu
+- chyby (vcetne detailu) + volitelny export do CSV
+
+### Troubleshooting
+
+Nejbeznejsi problemy pri importu a jejich reseni:
+
+1. Chyba: soubor nenalezen
+- over cestu predanou v `--products`, `--models`, `--types`, `--seo`
+- cesty jsou vyhodnocene relativne k rootu projektu
+
+2. Chyba: prazdna nebo neplatna hlavicka CSV
+- zkontroluj, ze soubor ma hlavickovy radek
+- over separator (`--separator=,` nebo `--separator=;`)
+
+3. Rozbite znaky (diakritika)
+- nastav spravne kodovani (`--encoding=UTF-8` nebo `--encoding=Windows-1250`)
+
+4. Vazby exModel/exTyp hlasi nenalezeny nosny produkt
+- `exArtId` musi odpovidat `ItemCode` z nosneho produktu
+- nejdriv naimportuj `products.csv`, potom `ex_models.csv` a `ex_types.csv`
+
+5. Chybi produktovy typ po importu
+- over obsah sloupce `Typ` a mapovani vyse
+- pokud je potreba nova hodnota, dopln mapu v `resolveTypeCode()`
+
+6. Ceny nebo sklady se neimportuji
+- ceny se berou ze sloupcu `Cena1`, `Cena2`, `Cena5`, `Cena6`, `Cena7`, `Cena8`
+- sklad se bere ze sloupcu `Dispo`, `Berlin_Stav`, `Vyprodej`
+- prazdne nebo nulove hodnoty se mohou preskocit dle pravidel importu
+
+7. Potrebuji zjistit detail chyb
+- pouzij `--errors-csv=storage/import/errors.csv`
+- command vraci tabulku chyb i do konzole
+
+8. Migrace pada na `SQLSTATE[42S01]` (table already exists)
+- typicky jde o stav, kdy cast tabulek uz byla vytvorena rucne nebo starsim pokusem o migraci
+- po aktualizaci kodu spust znovu `php artisan migrate` (kompatibilitni migrace je osetrena pro partially-existing schema)
+- over stav migraci pres `php artisan migrate:status`
+- pokud problem pretrva, zkontroluj konzistenci DB (existence tabulek vs. zaznam v tabulce `migrations`)
+
 ## Překlady (i18n)
 
 Projekt je plně lokalizován. Všechny uživatelské texty procházejí přes `__()` nebo `trans()` — žádné hardcodované řetězce ve views ani controllerech.

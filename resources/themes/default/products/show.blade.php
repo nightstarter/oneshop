@@ -131,6 +131,45 @@
         </div>
     @endif
 
+    {{-- Compatibility section – data loaded from carrier product --}}
+    @if ($carrier->deviceModels->isNotEmpty() || $carrier->partNumbers->isNotEmpty())
+        <hr class="my-4">
+        <div class="row g-4">
+
+            @if ($carrier->deviceModels->isNotEmpty())
+                <div class="col-md-6">
+                    <h2 class="h5 mb-3">{{ __('shop.compatible_devices') }}</h2>
+
+                    {{-- Group by brand for readability --}}
+                    @foreach ($carrier->deviceModels->groupBy('brand') as $brand => $models)
+                        <div class="mb-2">
+                            @if ($brand)
+                                <strong class="d-block text-muted small mb-1">{{ $brand }}</strong>
+                            @endif
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach ($models as $dm)
+                                    <span class="badge bg-light text-dark border">{{ $dm->model_name }}</span>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            @if ($carrier->partNumbers->isNotEmpty())
+                <div class="col-md-6">
+                    <h2 class="h5 mb-3">{{ __('shop.compatible_part_numbers') }}</h2>
+                    <div class="d-flex flex-wrap gap-1">
+                        @foreach ($carrier->partNumbers as $pn)
+                            <span class="badge bg-light text-dark border font-monospace">{{ $pn->value }}</span>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+        </div>
+    @endif
+
     @if ($mainImage)
         @push('scripts')
             <script>

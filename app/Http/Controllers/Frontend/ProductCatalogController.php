@@ -69,20 +69,34 @@ class ProductCatalogController extends Controller
     /** Product detail page. */
     public function show(Product $product)
     {
-        abort_unless($product->is_active, 404);
+        abort_unless($product->isActiveForSale(), 404);
 
         $product->load(['categories', 'productImages.mediaFile']);
         $customer = Auth::user()?->customer;
-        $price = $this->prices->calculate($product, $customer);
+        $price    = $this->prices->calculate($product, $customer);
+
+        // For SEO products: compatibility data lives on the carrier.
+        $carrier = $product->carrierProduct();
+        if ($product->isSeoProduct() && ! $product->relationLoaded('parent')) {
+            $product->load('parent');
+        }
+        $carrier->loadMissing(['deviceModels', 'partNumbers']);
 
         $related = Product::query()
-            ->where('is_active', true)
+            ->where('active', true)
             ->where('id', '!=', $product->id)
+            ->whereNull('parent_product_id')   // show only carrier products as related
             ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $product->categories->pluck('id')))
             ->with(['categories', 'productImages.mediaFile'])
             ->take(4)
             ->get();
 
-        return $this->renderTheme('products.show', compact('product', 'price', 'related', 'customer'));
+        return $this->renderTheme('products.show', compact(
+            'product',
+            'carrier',
+            'price',
+            'related',
+            'customer',
+        ));
     }
 }
