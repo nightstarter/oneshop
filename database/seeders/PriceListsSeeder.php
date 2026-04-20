@@ -14,8 +14,8 @@ class PriceListsSeeder extends Seeder
             // Odpovídá legacy Cena1..Cena8 sloupcům:
             //   DEFAULT → Cena1 (veřejný maloobchod)
             //   B2B     → Cena2 (registrovaný B2B zákazník)
-            //   VIP     → Cena5 (VIP / stálý zákazník)
-            //   RESELLER→ Cena6 (autorizovaný prodejce)
+            //   VO1     → Cena5 (velkoobchod 1. stupen)
+            //   VO2     → Cena6 (velkoobchod 2. stupen)
             //   BULK    → Cena7 (množstevní nákup)
             //   PARTNER → Cena8 (partnerský program)
             [
@@ -35,16 +35,16 @@ class PriceListsSeeder extends Seeder
                 'valid_to'    => null,
             ],
             [
-                'code'        => 'VIP',
-                'name'        => 'VIP zákazník',
+                'code'        => 'VO1',
+                'name'        => 'Velkoobchod 1',
                 'currency'    => config('shop.currency', 'CZK'),
                 'is_active'   => true,
                 'valid_from'  => null,
                 'valid_to'    => null,
             ],
             [
-                'code'        => 'RESELLER',
-                'name'        => 'Autorizovaný prodejce',
+                'code'        => 'VO2',
+                'name'        => 'Velkoobchod 2',
                 'currency'    => config('shop.currency', 'CZK'),
                 'is_active'   => true,
                 'valid_from'  => null,

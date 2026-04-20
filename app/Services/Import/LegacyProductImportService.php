@@ -51,8 +51,8 @@ class LegacyProductImportService
     private const PRICE_MAP = [
         'Cena1' => 'DEFAULT',
         'Cena2' => 'B2B',
-        'Cena5' => 'VIP',
-        'Cena6' => 'RESELLER',
+        'Cena5' => 'VO1',
+        'Cena6' => 'VO2',
         'Cena7' => 'BULK',
         'Cena8' => 'PARTNER',
     ];
