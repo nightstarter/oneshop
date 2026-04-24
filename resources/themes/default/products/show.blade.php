@@ -83,8 +83,12 @@
                 <div class="mb-4">{!! nl2br(e($product->description)) !!}</div>
             @endif
 
-            @if ($product->stock_qty > 0)
-                <p class="text-success"><i class="bi bi-check-circle me-1"></i>{{ __('shop.in_stock', ['count' => $product->stock_qty]) }}</p>
+            @if ($parameterValues->isNotEmpty())
+                @include('theme-default::products._parameters', ['parameterValues' => $parameterValues])
+            @endif
+
+            @if ($product->available_quantity > 0)
+                <p class="text-success"><i class="bi bi-check-circle me-1"></i>{{ __('shop.in_stock', ['count' => $product->available_quantity]) }}</p>
             @else
                 <p class="text-danger"><i class="bi bi-x-circle me-1"></i>{{ __('shop.out_of_stock') }}</p>
             @endif
@@ -99,13 +103,13 @@
                         <span class="text-muted">({{ __('shop.vat_label', ['rate' => $price['vat_rate']]) }})</span>
                     </div>
 
-                    @if ($product->stock_qty > 0)
+                    @if ($product->available_quantity > 0)
                         <form action="{{ route('cart.add') }}" method="POST">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
                             <div class="input-group mb-3">
                                 <span class="input-group-text">{{ __('forms.quantity') }}</span>
-                                <input type="number" class="form-control" name="quantity" value="1" min="1" max="{{ $product->stock_qty }}">
+                                <input type="number" class="form-control" name="quantity" value="1" min="1" max="{{ $product->available_quantity }}">
                             </div>
                             <button class="btn btn-primary w-100" type="submit">
                                 <i class="bi bi-cart-plus me-1"></i>{{ __('buttons.add_to_cart_full') }}

@@ -21,9 +21,18 @@ class ScoutProductSearch implements ProductSearchInterface
 {
     public function search(string $query, int $perPage = 20, int $page = 1): LengthAwarePaginator
     {
+        $query = trim($query);
+
+        if ($query === '') {
+            return Product::query()
+                ->activeForSale()
+                ->orderBy('name')
+                ->paginate($perPage, ['*'], 'page', $page);
+        }
+
         /** @var \Laravel\Scout\Builder $builder */
-        $builder = Product::search(trim($query))
-            ->where('is_active', true);
+        $builder = Product::search($query)
+            ->where('active', true);
 
         return $builder->paginate($perPage, 'page', $page);
     }

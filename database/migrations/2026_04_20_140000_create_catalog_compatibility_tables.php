@@ -26,11 +26,11 @@ return new class extends Migration
         if (! Schema::hasTable('device_models')) {
             Schema::create('device_models', function (Blueprint $table) {
                 $table->id();
-                $table->string('brand', 128)->nullable()->index();
-                $table->string('model_name', 191);
+                $table->string('brand', 96)->nullable()->index();
+                $table->string('model_name', 128);
                 // Pre-computed normalised value (lowercase, dots/dashes removed)
                 // used for fast LIKE searches without function indexes.
-                $table->string('model_normalized', 191)->index();
+                $table->string('model_normalized', 128)->index();
                 $table->string('slug')->unique();
                 // Legacy import columns
                 $table->string('legacy_ex_id', 64)->nullable()->index();

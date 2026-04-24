@@ -14,8 +14,8 @@ return new class extends Migration
 
         Schema::create('compatibility_models', function (Blueprint $table) {
             $table->id();
-            $table->string('brand', 128)->index();
-            $table->string('model_name', 191);
+            $table->string('brand', 96)->index();
+            $table->string('model_name', 128);
             $table->string('model_code', 128)->nullable()->index();
             $table->string('slug')->unique();
             $table->boolean('active')->default(true)->index();

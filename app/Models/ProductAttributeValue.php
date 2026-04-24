@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Arr;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,5 +52,39 @@ class ProductAttributeValue extends Model
         }
 
         return $this->value_text;
+    }
+
+    public function getDisplayValueAttribute(): string
+    {
+        if ($this->value_json !== null) {
+            $values = Arr::flatten($this->value_json);
+            $values = array_values(array_filter(array_map(
+                static fn (mixed $value): string => trim((string) $value),
+                $values,
+            ), static fn (string $value): bool => $value !== ''));
+
+            return implode(', ', $values);
+        }
+
+        if ($this->value_boolean !== null) {
+            return $this->value_boolean ? (string) __('shop.yes') : (string) __('shop.no');
+        }
+
+        if ($this->value_number !== null) {
+            $formatted = rtrim(rtrim(number_format((float) $this->value_number, 4, '.', ''), '0'), '.');
+
+            return $formatted . $this->displayUnit();
+        }
+
+        $value = trim((string) $this->value_text);
+
+        return $value === '' ? '' : $value . $this->displayUnit();
+    }
+
+    private function displayUnit(): string
+    {
+        $unit = trim((string) ($this->value_unit ?: $this->attribute?->unit ?: ''));
+
+        return $unit === '' ? '' : ' ' . $unit;
     }
 }

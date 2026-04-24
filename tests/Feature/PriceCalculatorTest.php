@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\StockItem;
 use App\Services\PriceCalculator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,9 +20,15 @@ class PriceCalculatorTest extends TestCase
             'sku' => 'SKU-001',
             'name' => 'Default Product',
             'slug' => 'default-product',
-            'base_price_net' => 100,
-            'stock_qty' => 10,
-            'is_active' => true,
+            'price' => 100,
+            'active' => true,
+            'stock_item_id' => StockItem::query()->create([
+                'sku' => 'STOCK-001',
+                'name' => 'Default Product Stock',
+                'product_type' => 'generic',
+                'quantity' => 10,
+                'active' => true,
+            ])->id,
         ]);
 
         $pricing = app(PriceCalculator::class)->calculate($product, null, 2);
@@ -40,9 +47,15 @@ class PriceCalculatorTest extends TestCase
             'sku' => 'SKU-002',
             'name' => 'B2B Product',
             'slug' => 'b2b-product',
-            'base_price_net' => 100,
-            'stock_qty' => 10,
-            'is_active' => true,
+            'price' => 100,
+            'active' => true,
+            'stock_item_id' => StockItem::query()->create([
+                'sku' => 'STOCK-002',
+                'name' => 'B2B Product Stock',
+                'product_type' => 'generic',
+                'quantity' => 10,
+                'active' => true,
+            ])->id,
         ]);
 
         $priceList = PriceList::query()->create([

@@ -58,7 +58,7 @@ Detailní průběžná historie implementačních kroků je vedena v samostatné
 
 ## Cenotvorba
 
-1. Výchozí cena se bere z `products.base_price_net`.
+1. Výchozí cena se bere z `products.price`.
 2. Pokud má zákazník přiřazený ceník a pro produkt existuje záznam v `price_list_product`, použije se jeho `price_net`.
 3. DPH se dopočítává globálně přes `config('shop.vat_rate')`.
 4. Do `orders` a `order_items` se ukládají finální vypočtené částky, aby se historická objednávka neměnila při pozdější změně katalogu.
@@ -464,7 +464,7 @@ Soubor obsahuje překlady validačních pravidel a klíč `attributes` s mapová
 
 - Pole objednávky a checkoutu: `product_id`, `quantity`, `shipping_method_id`, `payment_method_id`, `pickup_point_id`
 - Fakturační a doručovací adresa: `billing_*`, `shipping_*`
-- Produktová pole: `sku`, `base_price_net`, `stock_qty`, `category_ids`
+- Produktová pole: `sku`, `price`, `stock_quantity`, `category_ids`
 - Admin pole: `code`, `currency`, `valid_from`, `valid_to`, `price_net`, `price_gross`, `payment_method_ids`, `status`, `note` a další
 
 ### Přidání nového jazyka
@@ -575,6 +575,8 @@ Konfigurace watermark textu je v:
 
 - `config/shop.php` (`image_watermark_text`)
 - `.env` přes `SHOP_IMAGE_WATERMARK_TEXT`
+
+Watermark se při výstupu vykresluje diagonálně a opakuje se přes celou plochu obrázku.
 
 Příklad:
 

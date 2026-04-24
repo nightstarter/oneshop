@@ -14,6 +14,7 @@ return [
     'theme_default_desc' => 'ákladní fallback šablona se všemi storefront views.',
     'theme_studio_desc' => 'Kurátorský vzhled s vlastní homepage a detailem produktu.',
     'theme_mono_desc' => 'Minimalistická monochromatická varianta pro test inheritance.',
+    'theme_legacy_desc' => 'Retro e-shop styl inspirovany puvodnim AKU-SHOP vzhledem.',
     'theme_custom_desc' => 'Vlastní storefront šablona detekována z resources/themes.',
     'delete_category_confirm' => 'Smazat kategorii?',
     'delete_customer_confirm' => 'Smazat zákazníka?',

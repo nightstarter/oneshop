@@ -171,10 +171,6 @@ class SharedStockCatalogSeeder extends Seeder
                 'price' => $price,
                 'active' => true,
                 'visibility' => 'public',
-                // Backward compatibility for existing pricing/stock logic.
-                'base_price_net' => $price,
-                'stock_qty' => $stockItem->quantity,
-                'is_active' => true,
             ]
         );
 

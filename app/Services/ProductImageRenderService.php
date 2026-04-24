@@ -97,31 +97,77 @@ class ProductImageRenderService
             return $binary;
         }
 
-        $font = 4;
-        $textWidth = imagefontwidth($font) * strlen($text);
-        $textHeight = imagefontheight($font);
-        $padding = max(8, (int) floor(min($width, $height) * 0.02));
+        $stamp = $this->createWatermarkStamp($text, $width, $height);
+        if ($stamp === false) {
+            imagedestroy($image);
+            return $binary;
+        }
 
-        $x = max(0, $width - $textWidth - $padding);
-        $y = max(0, $height - $textHeight - $padding);
+        imagealphablending($image, true);
+        imagesavealpha($image, true);
 
-        $bgColor = imagecolorallocatealpha($image, 0, 0, 0, 70);
-        imagefilledrectangle(
-            $image,
-            max(0, $x - 6),
-            max(0, $y - 4),
-            min($width, $x + $textWidth + 6),
-            min($height, $y + $textHeight + 4),
-            $bgColor
-        );
+        $stampWidth = imagesx($stamp);
+        $stampHeight = imagesy($stamp);
+        $stepX = max(1, (int) floor($stampWidth * 0.78));
+        $stepY = max(1, (int) floor($stampHeight * 0.9));
 
-        $textColor = imagecolorallocatealpha($image, 255, 255, 255, 45);
-        imagestring($image, $font, $x, $y, $text, $textColor);
+        for ($y = -$stampHeight; $y < $height + $stampHeight; $y += $stepY) {
+            $rowOffset = (((int) floor($y / $stepY)) % 2 === 0)
+                ? (int) floor($stampWidth * 0.18)
+                : (int) floor(-$stampWidth * 0.22);
+
+            for ($x = -$stampWidth + $rowOffset; $x < $width + $stampWidth; $x += $stepX) {
+                imagecopy($image, $stamp, $x, $y, 0, 0, $stampWidth, $stampHeight);
+            }
+        }
+
+        imagedestroy($stamp);
 
         $output = $this->encodeImageToBinary($image, $mimeType);
         imagedestroy($image);
 
         return $output ?? $binary;
+    }
+
+    private function createWatermarkStamp(string $text, int $imageWidth, int $imageHeight)
+    {
+        $font = max(3, min(5, (int) floor(min($imageWidth, $imageHeight) / 220)));
+        $textWidth = max(1, imagefontwidth($font) * strlen($text));
+        $textHeight = imagefontheight($font);
+        $paddingX = max(18, (int) floor($textWidth * 0.16));
+        $paddingY = max(12, (int) floor($textHeight * 0.9));
+
+        $canvasWidth = $textWidth + ($paddingX * 2);
+        $canvasHeight = $textHeight + ($paddingY * 2);
+
+        $canvas = imagecreatetruecolor($canvasWidth, $canvasHeight);
+        if ($canvas === false) {
+            return false;
+        }
+
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+
+        $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+        imagefilledrectangle($canvas, 0, 0, $canvasWidth, $canvasHeight, $transparent);
+
+        $shadowColor = imagecolorallocatealpha($canvas, 0, 0, 0, 108);
+        $textColor = imagecolorallocatealpha($canvas, 255, 255, 255, 84);
+
+        imagestring($canvas, $font, $paddingX + 1, $paddingY + 1, $text, $shadowColor);
+        imagestring($canvas, $font, $paddingX, $paddingY, $text, $textColor);
+
+        $rotated = imagerotate($canvas, 32, $transparent);
+        imagedestroy($canvas);
+
+        if ($rotated === false) {
+            return false;
+        }
+
+        imagealphablending($rotated, true);
+        imagesavealpha($rotated, true);
+
+        return $rotated;
     }
 
     private function createImageFromBinary(string $binary, string $mimeType)

@@ -41,7 +41,7 @@
 
 ## 4. Business logika (napr. sklad, sety)
 - Pricing:
-  - PriceCalculator bere default z products.base_price_net
+  - PriceCalculator bere default z products.price
   - pokud ma customer price_list_id a existuje pivot cena, pouzije price_list_product.price_net
   - DPH podle config('shop.vat_rate')
 - Checkout:
@@ -53,7 +53,7 @@
   - InventoryService::deductForOrder dela transakcni odecet skladu
   - u kitu odecita jak hlavni stock item, tak komponenty podle ratio
 - Dostupnost produktu:
-  - Product::isActiveForSale() resi fallback active/is_active
+  - Product::isActiveForSale() cte pouze products.active
   - Product::hasStock() a StockItem::availableQuantityForSale() resi realnou dostupnost
 - Doprava/platby:
   - dostupnost metod jde pres provider implementace
@@ -142,11 +142,15 @@ Jednoduchý interní CMS pro správu statických obsahových stránek e-shopu.
 
 ## 8. Co je rozpracovane
 - Search Phase 2 (Scout/Typesense) je pripraveny, ale aktivni binding zustava na MysqlProductSearch
-- Produktovy model/schema je prechodovy:
-  - existuje stary i novy naming sloupcu (is_active + active, base_price_net + price, stock_qty + stock_item_id)
-  - kod obsahuje fallbacky mezi starym a novym modelem
+- Produktovy model/schema je po runtime strance sjednoceny:
+  - domena a query vrstva pouziva `active`, `price`, `stock_item_id`
+  - `base_price_net`, `stock_qty`, `is_active` uz nejsou pouzivane v runtime logice produktu
+  - legacy request klice pro admin/API product write endpointy jsou breaking change a nejsou uz podporovane
+  - legacy import puvodnich CSV hlavicek je zachovan jen v `App\Services\Import\LegacyProductRowMapper`
+  - finalni cleanup release ma odstranit legacy sloupce z DB po overeni produkcniho runbooku
 - Validace neni sjednocena:
   - cast admin/checkout endpointu pouziva FormRequest
   - cast endpointu pouziva inline request->validate
-- Test coverage domeny je limitovana:
-  - v tests je jen Feature/PriceCalculatorTest + example testy
+- Test coverage je rozsirená, ale porad ne uplna:
+  - pribyly unit/feature testy pro produktovou domenu, katalog, kosik, checkout, odečet skladu a backfill
+  - stale chybi sirsi pokryti admin CRUD toku, importu a Search Phase 2 integrace

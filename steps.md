@@ -85,6 +85,23 @@ Use it as a lightweight project timeline.
 - Added artisan command `import:legacy-products` with options for products/models/types/seo files.
 - Added dry-run mode and optional CSV export of errors.
 
+## 2026-04-24
+
+### 1. Product detail parameters in storefront
+- Loaded product attribute values for product detail pages from the carrier product.
+- Rendered parameter/specification table in the default theme and in the studio theme.
+- Added frontend formatting for numeric, boolean, text, and JSON attribute values.
+
+### 2. Legacy storefront theme and modernized pagination
+- Added new `legacy` storefront theme with custom header, footer, homepage, category listing, and product detail templates.
+- Replaced oversized paginator arrows with compact localized pagination controls.
+- Added AJAX pagination for product listings in `legacy`, `default`, and `mono` themes (partial content refresh + history support).
+
+### 3. Admin listing pagination without full-page reload
+- Added AJAX pagination to admin index pages with paging (`products`, `categories`, `customers`, `price lists`, `shipping methods`, `payment methods`, `orders`, `payment transactions`, `pages`).
+- Wrapped paginated table blocks in replaceable containers and updated only the listing region on page navigation.
+- Added localization files for pagination labels (`lang/cs/pagination.php`, `lang/en/pagination.php`).
+
 ## How to update this file
 - Append a new dated section for each work session.
 - Keep entries short and factual.

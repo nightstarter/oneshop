@@ -64,6 +64,32 @@
             color: var(--mono-muted);
         }
 
+        .mono-pagination .pagination {
+            gap: .3rem;
+        }
+
+        .mono-pagination .page-link {
+            background: #101010;
+            color: #ececec;
+            border-color: #2c2c2c;
+            border-radius: .45rem;
+            min-width: 2.2rem;
+            text-align: center;
+            box-shadow: none;
+        }
+
+        .mono-pagination .page-item.active .page-link {
+            background: #ffffff;
+            color: #111111;
+            border-color: #ffffff;
+        }
+
+        .mono-pagination .page-item.disabled .page-link {
+            color: #7b7b7b;
+            background: #151515;
+            border-color: #272727;
+        }
+
         .alert {
             border-radius: 1rem;
         }

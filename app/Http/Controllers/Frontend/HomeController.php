@@ -14,7 +14,7 @@ class HomeController extends Controller
     public function index()
     {
         $featuredProducts = Product::query()
-            ->where('is_active', true)
+            ->activeForSale()
             ->with(['categories', 'productImages.mediaFile'])
             ->latest()
             ->take(8)

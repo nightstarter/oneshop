@@ -168,7 +168,7 @@ class CartService
 
         $products = Product::with('categories')
             ->whereIn('id', array_keys($cart))
-            ->where('is_active', true)
+            ->activeForSale()
             ->get()
             ->keyBy('id');
 
@@ -226,7 +226,7 @@ class CartService
         return $cart->items()
             ->with('product.categories')
             ->get()
-            ->filter(fn (CartItem $item) => $item->product?->is_active)
+            ->filter(fn (CartItem $item) => $item->product?->isActiveForSale())
             ->map(function (CartItem $item) use ($customer, $calculator) {
                 $price = $calculator->calculate($item->product, $customer, $item->quantity);
                 return $this->makeItem($item->product, $item->quantity, $price);

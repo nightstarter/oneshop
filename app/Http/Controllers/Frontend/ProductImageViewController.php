@@ -80,7 +80,7 @@ SVG;
 
     private function canView(MediaFile $mediaFile): bool
     {
-        $isPublic = $mediaFile->products()->where('is_active', true)->exists();
+        $isPublic = $mediaFile->products()->activeForSale()->exists();
         if ($isPublic) {
             return true;
         }

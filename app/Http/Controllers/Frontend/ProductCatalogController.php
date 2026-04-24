@@ -23,7 +23,7 @@ class ProductCatalogController extends Controller
     /** All products or search results. */
     public function index(Request $request)
     {
-        $query = $request->input('q', '');
+        $query = trim((string) $request->input('q', ''));
 
         if ($query !== '') {
             $products = $this->search->search(
@@ -35,7 +35,7 @@ class ProductCatalogController extends Controller
             $products->getCollection()->loadMissing(['categories', 'productImages.mediaFile']);
         } else {
             $products = Product::query()
-                ->where('is_active', true)
+                ->activeForSale()
                 ->with(['categories', 'productImages.mediaFile'])
                 ->orderBy('name')
                 ->paginate(24);
@@ -53,7 +53,7 @@ class ProductCatalogController extends Controller
     public function category(Request $request, Category $category)
     {
         $products = $category->products()
-            ->where('is_active', true)
+            ->activeForSale()
             ->with(['categories', 'productImages.mediaFile'])
             ->orderBy('name')
             ->paginate(24);
@@ -71,19 +71,24 @@ class ProductCatalogController extends Controller
     {
         abort_unless($product->isActiveForSale(), 404);
 
-        $product->load(['categories', 'productImages.mediaFile']);
+        $product->load(['categories', 'productImages.mediaFile', 'parent']);
         $customer = Auth::user()?->customer;
         $price    = $this->prices->calculate($product, $customer);
 
         // For SEO products: compatibility data lives on the carrier.
         $carrier = $product->carrierProduct();
-        if ($product->isSeoProduct() && ! $product->relationLoaded('parent')) {
-            $product->load('parent');
-        }
-        $carrier->loadMissing(['deviceModels', 'partNumbers']);
+        $carrier->loadMissing(['deviceModels', 'partNumbers', 'attributeValues.attribute']);
+        $parameterValues = $carrier->attributeValues
+            ->filter(fn ($attributeValue) => $attributeValue->attribute !== null && $attributeValue->display_value !== '')
+            ->sortBy(fn ($attributeValue) => sprintf(
+                '%05d-%s',
+                (int) $attributeValue->attribute->sort_order,
+                mb_strtolower($attributeValue->attribute->name),
+            ))
+            ->values();
 
         $related = Product::query()
-            ->where('active', true)
+            ->activeForSale()
             ->where('id', '!=', $product->id)
             ->whereNull('parent_product_id')   // show only carrier products as related
             ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $product->categories->pluck('id')))
@@ -94,6 +99,7 @@ class ProductCatalogController extends Controller
         return $this->renderTheme('products.show', compact(
             'product',
             'carrier',
+            'parameterValues',
             'price',
             'related',
             'customer',

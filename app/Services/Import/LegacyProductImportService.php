@@ -86,6 +86,7 @@ class LegacyProductImportService
 
     public function __construct(
         private readonly ImportReport $report,
+        private readonly LegacyProductRowMapper $mapper = new LegacyProductRowMapper(),
     ) {}
 
     // ── Public API ────────────────────────────────────────────────────────
@@ -106,27 +107,12 @@ class LegacyProductImportService
         try {
             DB::transaction(function () use ($sku, $row) {
                 $isNew    = ! Product::where('legacy_item_code', $sku)->exists();
-                $active   = ! $this->truthy($row['Closed'] ?? false);
                 $typeCode = $this->resolveTypeCode($row);
                 $typeId   = $typeCode ? $this->productTypes()[$typeCode] ?? null : null;
 
                 $product = Product::updateOrCreate(
                     ['legacy_item_code' => $sku],
-                    [
-                        'product_type_id'   => $typeId,
-                        'sku'               => $sku,
-                        'name'              => trim($row['ItemName'] ?? $sku),
-                        'slug'              => $this->makeSlug($sku, $row['ItemName'] ?? ''),
-                        'description'       => trim($row['InfoText'] ?? ''),
-                        'base_price_net'    => $this->decimal($row['Cena1'] ?? 0),
-                        'price'             => $this->decimal($row['Cena1'] ?? 0),
-                        'active'            => $active,
-                        'is_active'         => $active,
-                        'legacy_group_id'   => $row['GrpId'] ?? null,
-                        'legacy_sphinx_id'  => isset($row['sphinx_id']) && $row['sphinx_id'] !== '' ? (int) $row['sphinx_id'] : null,
-                        'legacy_payload'    => $this->buildLegacyPayload($row),
-                        'parent_product_id' => null,
-                    ]
+                    $this->mapper->mapCarrierProductAttributes($row, $typeId)
                 );
 
                 $isNew ? $this->report->incCreated() : $this->report->incUpdated();
@@ -177,18 +163,7 @@ class LegacyProductImportService
 
                 Product::updateOrCreate(
                     ['sku' => $seoSku],
-                    [
-                        'parent_product_id'      => $parent->id,
-                        'linked_device_model_id' => $linkedModelId,
-                        'name'                   => trim($row['SeoName'] ?? $parent->name),
-                        'slug'                   => $this->makeSlug($seoSku, $row['SeoSlug'] ?? $row['SeoName'] ?? ''),
-                        'description'            => trim($row['SeoDescription'] ?? ''),
-                        'base_price_net'         => $parent->base_price_net,
-                        'price'                  => $parent->price,
-                        'active'                 => $parent->active,
-                        'is_active'              => $parent->is_active,
-                        'product_type_id'        => $parent->product_type_id,
-                    ]
+                    $this->mapper->mapSeoProductAttributes($row, $parent, $linkedModelId)
                 );
 
                 $isNew ? $this->report->incSeoCreated() : $this->report->incSeoUpdated();
@@ -363,10 +338,14 @@ class LegacyProductImportService
             if (! $plId) {
                 continue;
             }
+			
+            if ($col === 'Cena1') {
+                $net = $net / (1 + ((float) config('shop.vat_rate', 21.0) / 100));
+            }
 
             ProductPrice::updateOrCreate(
                 ['product_id' => $product->id, 'price_list_id' => $plId, 'valid_from' => null],
-                ['price_net' => $net],
+                ['price_net' => $net, 'updated_at' => now()],
             );
             $count++;
         }
@@ -563,54 +542,11 @@ class LegacyProductImportService
 
     // ── Utility ───────────────────────────────────────────────────────────
 
-    private function truthy(mixed $v): bool
-    {
-        if (is_bool($v)) {
-            return $v;
-        }
-        return in_array(strtolower((string) $v), ['1', 'true', 'yes', 'ano', 'y'], true);
-    }
-
     private function decimal(mixed $v): float
     {
         // Handle comma as decimal separator (Czech locale exports)
         $str = str_replace(',', '.', (string) $v);
         return (float) $str;
-    }
-
-    private function makeSlug(string $key, string $name): string
-    {
-        $base = Str::slug($name ?: $key);
-        if ($base === '') {
-            $base = Str::slug($key);
-        }
-
-        // Ensure uniqueness: if taken by a different product, append itemCode suffix
-        $candidate = $base;
-        $i = 1;
-        while (
-            Product::where('slug', $candidate)
-                ->where('legacy_item_code', '!=', $key)
-                ->where('sku', '!=', $key)
-                ->exists()
-        ) {
-            $candidate = $base . '-' . $i++;
-        }
-
-        return $candidate;
-    }
-
-    private function buildLegacyPayload(array $row): array
-    {
-        // Capture rarely used fields as JSON for traceability
-        return array_filter([
-            'GrpId'    => $row['GrpId']    ?? null,
-            'Interne'  => $row['Interne']  ?? null,
-            'Skupina'  => $row['Skupina']  ?? null,
-            'Akce'     => $row['Akce']     ?? null,
-            'Dodavatel'=> $row['Dodavatel'] ?? null,
-            'Rozmer'   => $row['Rozmer']   ?? null,
-        ], fn ($v) => $v !== null && (string) $v !== '');
     }
 
     /**

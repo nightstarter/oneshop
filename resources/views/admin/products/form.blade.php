@@ -25,11 +25,11 @@
         </div>
         <div class="col-md-3">
             <label class="form-label">{{ __('shop.price_net') }}</label>
-            <input type="number" step="0.01" min="0" name="base_price_net" class="form-control" value="{{ old('base_price_net', $product->base_price_net) }}" required>
+            <input type="number" step="0.01" min="0" name="price" class="form-control" value="{{ old('price', $product->price) }}" required>
         </div>
         <div class="col-md-3">
             <label class="form-label">{{ __('shop.admin.stock') }}</label>
-            <input type="number" min="0" name="stock_qty" class="form-control" value="{{ old('stock_qty', $product->stock_qty ?? 0) }}" required>
+            <input type="number" min="0" name="stock_quantity" class="form-control" value="{{ old('stock_quantity', $product->stockItem?->quantity ?? $product->available_quantity) }}" required>
         </div>
 
         <div class="col-12">
@@ -50,9 +50,9 @@
 
         <div class="col-12">
             <div class="form-check">
-                <input type="hidden" name="is_active" value="0">
-                <input class="form-check-input" type="checkbox" name="is_active" value="1" id="is_active" @checked(old('is_active', $product->is_active ?? true))>
-                <label class="form-check-label" for="is_active">{{ __('forms.active_product') }}</label>
+                <input type="hidden" name="active" value="0">
+                <input class="form-check-input" type="checkbox" name="active" value="1" id="active" @checked(old('active', $product->active ?? true))>
+                <label class="form-check-label" for="active">{{ __('forms.active_product') }}</label>
             </div>
         </div>
     </div>

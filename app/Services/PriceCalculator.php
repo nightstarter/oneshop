@@ -33,7 +33,7 @@ class PriceCalculator
     public function resolveUnitNetPrice(Product $product, ?Customer $customer = null): float
     {
         if (! $customer?->price_list_id) {
-            return (float) $product->base_price_net;
+            return (float) $product->price;
         }
 
         $priceListEntry = $product->priceLists()
@@ -44,6 +44,6 @@ class PriceCalculator
             return (float) $priceListEntry->pivot->price_net;
         }
 
-        return (float) $product->base_price_net;
+        return (float) $product->price;
     }
 }

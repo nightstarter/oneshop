@@ -70,6 +70,10 @@
 
                 <p class="lead studio-muted mb-4">{{ $product->description ?: __('messages.theme_runtime') }}</p>
 
+                @if ($parameterValues->isNotEmpty())
+                    @include('theme-default::products._parameters', ['parameterValues' => $parameterValues])
+                @endif
+
                 <div class="d-flex align-items-center gap-3 flex-wrap">
                     <div class="h2 mb-0">{{ number_format($price['unit_gross'], 2, ',', ' ') }} {{ config('shop.currency') }}</div>
                     <div class="studio-muted">{{ __('shop.price_excluding_vat') }} {{ number_format($price['unit_net'], 2, ',', ' ') }} {{ config('shop.currency') }}</div>
@@ -80,14 +84,14 @@
         <div class="col-lg-5">
             <div class="studio-card p-4 p-lg-5 sticky-top" style="top: 2rem;">
                 <div class="small text-uppercase studio-muted mb-2">{{ __('shop.order_status') }}</div>
-                @if ($product->stock_qty > 0)
-                    <div class="h4 mb-3">{{ __('shop.in_stock', ['count' => $product->stock_qty]) }}</div>
+                @if ($product->available_quantity > 0)
+                    <div class="h4 mb-3">{{ __('shop.in_stock', ['count' => $product->available_quantity]) }}</div>
                     <form action="{{ route('cart.add') }}" method="POST">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <div class="mb-3">
                             <label class="form-label">{{ __('forms.quantity') }}</label>
-                            <input type="number" class="form-control form-control-lg" name="quantity" value="1" min="1" max="{{ $product->stock_qty }}">
+                            <input type="number" class="form-control form-control-lg" name="quantity" value="1" min="1" max="{{ $product->available_quantity }}">
                         </div>
                         <button class="btn studio-btn btn-lg w-100" type="submit">{{ __('buttons.add_to_cart_full') }}</button>
                     </form>

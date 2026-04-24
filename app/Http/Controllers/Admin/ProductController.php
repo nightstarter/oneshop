@@ -8,6 +8,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use App\Services\PriceCalculator;
+use App\Services\ProductWriteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,19 +17,22 @@ class ProductController extends Controller
     public function __construct(
         private readonly PriceCalculator $prices,
         private readonly ProductSearchInterface $search,
+        private readonly ProductWriteService $productWriter,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
-        if ($request->filled('q')) {
+        $query = trim((string) $request->input('q', ''));
+
+        if ($query !== '') {
             $products = $this->search->search(
-                $request->input('q'),
+                $query,
                 $request->integer('per_page', 20),
                 $request->integer('page', 1),
             );
         } else {
             $products = Product::query()
-                ->when(! $request->boolean('with_inactive'), fn ($q) => $q->where('is_active', true))
+                ->when(! $request->boolean('with_inactive'), fn ($q) => $q->activeForSale())
                 ->with('categories')
                 ->orderBy('name')
                 ->paginate($request->integer('per_page', 20));
@@ -43,7 +47,7 @@ class ProductController extends Controller
         $categoryIds = $data['category_ids'] ?? [];
         unset($data['category_ids']);
 
-        $product = Product::create($data);
+        $product = $this->productWriter->create($data);
 
         if ($categoryIds) {
             $product->categories()->sync($categoryIds);
@@ -70,7 +74,7 @@ class ProductController extends Controller
         $categoryIds = $data['category_ids'] ?? null;
         unset($data['category_ids']);
 
-        $product->update($data);
+        $product = $this->productWriter->update($product, $data);
 
         if (! is_null($categoryIds)) {
             $product->categories()->sync($categoryIds);

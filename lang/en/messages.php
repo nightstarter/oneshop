@@ -14,6 +14,7 @@ return [
     'theme_default_desc' => 'Base fallback theme with all storefront views.',
     'theme_studio_desc' => 'Curated look with a custom homepage and product detail.',
     'theme_mono_desc' => 'Minimal monochrome variant for inheritance testing.',
+    'theme_legacy_desc' => 'Retro storefront style inspired by the original AKU-SHOP look.',
     'theme_custom_desc' => 'Custom storefront theme detected from resources/themes.',
     'delete_category_confirm' => 'Delete category?',
     'delete_customer_confirm' => 'Delete customer?',

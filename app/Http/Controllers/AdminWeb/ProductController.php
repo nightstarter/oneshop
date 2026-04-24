@@ -8,9 +8,14 @@ use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockItem;
+use App\Services\ProductWriteService;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        private readonly ProductWriteService $productWriter,
+    ) {}
+
     public function index()
     {
         $products = Product::query()->with('categories')->orderBy('name')->paginate(20);
@@ -35,7 +40,7 @@ class ProductController extends Controller
         $categoryIds = $data['category_ids'] ?? [];
         unset($data['category_ids']);
 
-        $product = Product::create($data);
+        $product = $this->productWriter->create($data);
         $product->categories()->sync($categoryIds);
 
         return redirect()->route('admin.products.edit', $product)->with('success', __('messages.product_created'));
@@ -73,7 +78,7 @@ class ProductController extends Controller
         $categoryIds = $data['category_ids'] ?? null;
         unset($data['category_ids']);
 
-        $product->update($data);
+        $product = $this->productWriter->update($product, $data);
 
         if ($categoryIds !== null) {
             $product->categories()->sync($categoryIds);

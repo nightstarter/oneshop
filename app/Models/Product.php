@@ -31,17 +31,16 @@ class Product extends Model
         'price',
         'active',
         'visibility',
-        'base_price_net',
-        'stock_qty',
-        'is_active',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'active' => 'boolean',
-        'base_price_net' => 'decimal:2',
-        'is_active' => 'boolean',
         'legacy_payload' => 'array',
+    ];
+
+    protected $appends = [
+        'available_quantity',
     ];
 
     public function searchableAs(): string
@@ -62,9 +61,8 @@ class Product extends Model
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description ?? '',
-            'price' => (float) ($this->price ?? $this->base_price_net),
-            'base_price_net' => (float) $this->base_price_net,
-            'is_active' => $this->isActiveForSale(),
+            'price' => (float) $this->price,
+            'active' => $this->isActiveForSale(),
             'categories' => $this->categories->pluck('name')->values()->all(),
             'created_at_timestamp' => $this->created_at?->timestamp ?? now()->timestamp,
         ];
@@ -80,8 +78,8 @@ class Product extends Model
                 ['name' => 'name', 'type' => 'string'],
                 ['name' => 'slug', 'type' => 'string'],
                 ['name' => 'description', 'type' => 'string', 'optional' => true],
-                ['name' => 'base_price_net', 'type' => 'float'],
-                ['name' => 'is_active', 'type' => 'bool'],
+                ['name' => 'price', 'type' => 'float'],
+                ['name' => 'active', 'type' => 'bool'],
                 ['name' => 'categories', 'type' => 'string[]', 'optional' => true],
                 ['name' => 'created_at_timestamp', 'type' => 'int64'],
             ],
@@ -248,6 +246,11 @@ class Product extends Model
         return $this->hasMany(ProductCompatibility::class);
     }
 
+    public function scopeActiveForSale(Builder $query): Builder
+    {
+        return $query->where('active', true);
+    }
+
     public function images(): BelongsToMany
     {
         return $this->belongsToMany(MediaFile::class, 'product_images')
@@ -258,11 +261,7 @@ class Product extends Model
 
     public function isActiveForSale(): bool
     {
-        if ($this->active !== null) {
-            return (bool) $this->active;
-        }
-
-        return (bool) $this->is_active;
+        return (bool) $this->active;
     }
 
     public function availableQuantity(): int
@@ -287,5 +286,10 @@ class Product extends Model
         return $this->stockItem !== null
             && $this->stockItem->active
             && $this->stockItem->availableQuantityForSale() >= $requiredQty;
+    }
+
+    public function getAvailableQuantityAttribute(): int
+    {
+        return $this->availableQuantity();
     }
 }

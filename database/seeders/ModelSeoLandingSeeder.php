@@ -82,10 +82,6 @@ class ModelSeoLandingSeeder extends Seeder
                     'price' => $definition['price'],
                     'active' => true,
                     'visibility' => 'public',
-                    // Backward compatibility for existing pricing/stock logic.
-                    'base_price_net' => $definition['price'],
-                    'stock_qty' => 0,
-                    'is_active' => true,
                 ]
             );
 

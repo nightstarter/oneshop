@@ -41,6 +41,8 @@
                                     {{ __('messages.theme_studio_desc') }}
                                 @elseif ($theme === 'mono')
                                     {{ __('messages.theme_mono_desc') }}
+                                @elseif ($theme === 'legacy')
+                                    {{ __('messages.theme_legacy_desc') }}
                                 @else
                                     {{ __('messages.theme_custom_desc') }}
                                 @endif

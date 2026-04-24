@@ -31,17 +31,20 @@ class MysqlProductSearch implements ProductSearchInterface
     public function search(string $query, int $perPage = 20, int $page = 1): LengthAwarePaginator
     {
         $raw  = trim($query);
+
+        if ($raw === '') {
+            return Product::query()
+                ->activeForSale()
+                ->with(['categories', 'productImages.mediaFile'])
+                ->orderBy('name')
+                ->paginate($perPage, ['*'], 'page', $page);
+        }
+
         $norm = SearchNormalizer::normalize($raw);
         $like = '%' . $norm . '%';
 
         return Product::query()
-            // Active check: prefer `active` column, fall back to `is_active`
-            ->where(function ($q) {
-                $q->where('active', true)
-                  ->orWhere(function ($q2) {
-                      $q2->whereNull('active')->where('is_active', true);
-                  });
-            })
+            ->activeForSale()
             ->where(function ($base) use ($raw, $norm, $like) {
                 // Classic name / SKU search (raw input)
                 $base->where('sku', $raw)
